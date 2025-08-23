@@ -29,18 +29,13 @@
                 </form>
             </div>
             <div class="col-6 text-end">
-                <p>
-                    <button type="button" class="btn btn-primary" onclick="exportToCsv()">Export Selected to CSV</button>
-                </p>
+                
             </div>
         </div>
 
         <table class="table table-bordered table-hover" id="dataTable">
             <thead class="table-secondary">
             <tr>
-                <th data-orderable="false">
-                    <input type="checkbox" class="text-center" id="selectAll" onclick="toggleSelectAll(this)">
-                </th>
                 <th>
                     @Html.DisplayNameFor(model => model.DebitMemoNo)
                 </th>
@@ -68,9 +63,6 @@
                 @foreach (var item in Model)
                 {
                     <tr>
-                        <td>
-                            <input type="checkbox" class="selectCheckbox text-center" value="@item.DebitMemoId">
-                        </td>
                         <td>
                             @Html.DisplayFor(modelItem => item.DebitMemoNo)
                         </td>
