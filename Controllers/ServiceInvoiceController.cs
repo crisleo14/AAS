@@ -758,195 +758,203 @@ namespace Accounting_System.Controllers
 
                 try
                 {
-                    using var package = new ExcelPackage(stream);
-                    var worksheet = package.Workbook.Worksheets.FirstOrDefault();
-                    if (worksheet == null)
+                    if (file.FileName.Contains(CS.Name))
                     {
-                        TempData["error"] = "The Excel file contains no worksheets.";
-                        return RedirectToAction(nameof(Index), new { view = DynamicView.ServiceInvoice });
-                    }
-                    if (worksheet.ToString() != "ServiceInvoice")
-                    {
-                        TempData["error"] = "The Excel file is not related to service invoice.";
-                        return RedirectToAction(nameof(Index), new { view = DynamicView.ServiceInvoice });
-                    }
-
-                    var rowCount = worksheet.Dimension.Rows;
-                    var svDictionary = new Dictionary<string, bool>();
-                    var serviceInvoiceList = await _dbContext
-                        .ServiceInvoices
-                        .ToListAsync(cancellationToken);
-
-                    for (int row = 2; row <= rowCount; row++)  // Assuming the first row is the header
-                    {
-                        var serviceInvoice = new ServiceInvoice
+                        using var package = new ExcelPackage(stream);
+                        var worksheet = package.Workbook.Worksheets.FirstOrDefault();
+                        if (worksheet == null)
                         {
-                            ServiceInvoiceNo = worksheet.Cells[row, 17].Text,
-                            DueDate = DateOnly.TryParse(worksheet.Cells[row, 1].Text, out DateOnly dueDate) ? dueDate : default,
-                            Period = DateOnly.TryParse(worksheet.Cells[row, 2].Text, out DateOnly period) ? period : default,
-                            Amount = decimal.TryParse(worksheet.Cells[row, 3].Text, out decimal amount) ? amount : 0,
-                            Total = decimal.TryParse(worksheet.Cells[row, 4].Text, out decimal total) ? total : 0,
-                            Discount = decimal.TryParse(worksheet.Cells[row, 5].Text, out decimal discount) ? discount : 0,
-                            CurrentAndPreviousAmount = decimal.TryParse(worksheet.Cells[row, 6].Text, out decimal currentAndPreviousAmount) ? currentAndPreviousAmount : 0,
-                            UnearnedAmount = decimal.TryParse(worksheet.Cells[row, 7].Text, out decimal unearnedAmount) ? unearnedAmount : 0,
-                            Status = worksheet.Cells[row, 8].Text,
-                            // AmountPaid = decimal.TryParse(worksheet.Cells[row, 9].Text, out decimal amountPaid) ? amountPaid : 0,
-                            // Balance = decimal.TryParse(worksheet.Cells[row, 10].Text, out decimal balance) ? balance : 0,
-                            Instructions = worksheet.Cells[row, 11].Text,
-                            // IsPaid = bool.TryParse(worksheet.Cells[row, 12].Text, out bool isPaid) ? isPaid : false,
-                            CreatedBy = worksheet.Cells[row, 13].Text,
-                            CreatedDate = DateTime.TryParse(worksheet.Cells[row, 14].Text, out DateTime createdDate) ? createdDate : default,
-                            PostedBy = worksheet.Cells[row, 20].Text,
-                            PostedDate = DateTime.TryParse(worksheet.Cells[row, 21].Text, out DateTime postedDate) ? postedDate : default,
-                            CancellationRemarks = worksheet.Cells[row, 15].Text,
-                            OriginalCustomerId = int.TryParse(worksheet.Cells[row, 16].Text, out int originalCustomerId) ? originalCustomerId : 0,
-                            OriginalSeriesNumber = worksheet.Cells[row, 17].Text,
-                            OriginalServicesId = int.TryParse(worksheet.Cells[row, 18].Text, out int originalServicesId) ? originalServicesId : 0,
-                            OriginalDocumentId = int.TryParse(worksheet.Cells[row, 19].Text, out int originalDocumentId) ? originalDocumentId : 0,
-                        };
-
-                        if (!svDictionary.TryAdd(serviceInvoice.OriginalSeriesNumber, true))
+                            TempData["error"] = "The Excel file contains no worksheets.";
+                            return RedirectToAction(nameof(Index), new { view = DynamicView.ServiceInvoice });
+                        }
+                        if (worksheet.ToString() != "ServiceInvoice")
                         {
-                            continue;
+                            TempData["error"] = "The Excel file is not related to service invoice.";
+                            return RedirectToAction(nameof(Index), new { view = DynamicView.ServiceInvoice });
                         }
 
-                        if (serviceInvoiceList.Any(sv => sv.OriginalDocumentId == serviceInvoice.OriginalDocumentId))
+                        var rowCount = worksheet.Dimension.Rows;
+                        var svDictionary = new Dictionary<string, bool>();
+                        var serviceInvoiceList = await _dbContext
+                            .ServiceInvoices
+                            .ToListAsync(cancellationToken);
+
+                        for (int row = 2; row <= rowCount; row++)  // Assuming the first row is the header
                         {
-                            var svChanges = new Dictionary<string, (string OriginalValue, string NewValue)>();
-                            var existingSv = await _dbContext.ServiceInvoices.FirstOrDefaultAsync(si => si.OriginalDocumentId == serviceInvoice.OriginalDocumentId, cancellationToken);
-
-                            if (existingSv!.ServiceInvoiceNo!.TrimStart().TrimEnd() != worksheet.Cells[row, 17].Text.TrimStart().TrimEnd())
+                            var serviceInvoice = new ServiceInvoice
                             {
-                                svChanges["SvNo"] = (existingSv.ServiceInvoiceNo.TrimStart().TrimEnd(), worksheet.Cells[row, 17].Text.TrimStart().TrimEnd());
+                                ServiceInvoiceNo = worksheet.Cells[row, 17].Text,
+                                DueDate = DateOnly.TryParse(worksheet.Cells[row, 1].Text, out DateOnly dueDate) ? dueDate : default,
+                                Period = DateOnly.TryParse(worksheet.Cells[row, 2].Text, out DateOnly period) ? period : default,
+                                Amount = decimal.TryParse(worksheet.Cells[row, 3].Text, out decimal amount) ? amount : 0,
+                                Total = decimal.TryParse(worksheet.Cells[row, 4].Text, out decimal total) ? total : 0,
+                                Discount = decimal.TryParse(worksheet.Cells[row, 5].Text, out decimal discount) ? discount : 0,
+                                CurrentAndPreviousAmount = decimal.TryParse(worksheet.Cells[row, 6].Text, out decimal currentAndPreviousAmount) ? currentAndPreviousAmount : 0,
+                                UnearnedAmount = decimal.TryParse(worksheet.Cells[row, 7].Text, out decimal unearnedAmount) ? unearnedAmount : 0,
+                                Status = worksheet.Cells[row, 8].Text,
+                                // AmountPaid = decimal.TryParse(worksheet.Cells[row, 9].Text, out decimal amountPaid) ? amountPaid : 0,
+                                // Balance = decimal.TryParse(worksheet.Cells[row, 10].Text, out decimal balance) ? balance : 0,
+                                Instructions = worksheet.Cells[row, 11].Text,
+                                // IsPaid = bool.TryParse(worksheet.Cells[row, 12].Text, out bool isPaid) ? isPaid : false,
+                                CreatedBy = worksheet.Cells[row, 13].Text,
+                                CreatedDate = DateTime.TryParse(worksheet.Cells[row, 14].Text, out DateTime createdDate) ? createdDate : default,
+                                PostedBy = worksheet.Cells[row, 20].Text,
+                                PostedDate = DateTime.TryParse(worksheet.Cells[row, 21].Text, out DateTime postedDate) ? postedDate : default,
+                                CancellationRemarks = worksheet.Cells[row, 15].Text,
+                                OriginalCustomerId = int.TryParse(worksheet.Cells[row, 16].Text, out int originalCustomerId) ? originalCustomerId : 0,
+                                OriginalSeriesNumber = worksheet.Cells[row, 17].Text,
+                                OriginalServicesId = int.TryParse(worksheet.Cells[row, 18].Text, out int originalServicesId) ? originalServicesId : 0,
+                                OriginalDocumentId = int.TryParse(worksheet.Cells[row, 19].Text, out int originalDocumentId) ? originalDocumentId : 0,
+                            };
+
+                            if (!svDictionary.TryAdd(serviceInvoice.OriginalSeriesNumber, true))
+                            {
+                                continue;
                             }
 
-                            if (existingSv.DueDate.ToString("yyyy-MM-dd").TrimStart().TrimEnd() != worksheet.Cells[row, 1].Text.TrimStart().TrimEnd())
+                            if (serviceInvoiceList.Any(sv => sv.OriginalDocumentId == serviceInvoice.OriginalDocumentId))
                             {
-                                svChanges["DueDate"] = (existingSv.DueDate.ToString("yyyy-MM-dd").TrimStart().TrimEnd(), worksheet.Cells[row, 1].Text.TrimStart().TrimEnd());
+                                var svChanges = new Dictionary<string, (string OriginalValue, string NewValue)>();
+                                var existingSv = await _dbContext.ServiceInvoices.FirstOrDefaultAsync(si => si.OriginalDocumentId == serviceInvoice.OriginalDocumentId, cancellationToken);
+
+                                if (existingSv!.ServiceInvoiceNo!.TrimStart().TrimEnd() != worksheet.Cells[row, 17].Text.TrimStart().TrimEnd())
+                                {
+                                    svChanges["SvNo"] = (existingSv.ServiceInvoiceNo.TrimStart().TrimEnd(), worksheet.Cells[row, 17].Text.TrimStart().TrimEnd());
+                                }
+
+                                if (existingSv.DueDate.ToString("yyyy-MM-dd").TrimStart().TrimEnd() != worksheet.Cells[row, 1].Text.TrimStart().TrimEnd())
+                                {
+                                    svChanges["DueDate"] = (existingSv.DueDate.ToString("yyyy-MM-dd").TrimStart().TrimEnd(), worksheet.Cells[row, 1].Text.TrimStart().TrimEnd());
+                                }
+
+                                if (existingSv.Period.ToString("yyyy-MM-dd").TrimStart().TrimEnd() != worksheet.Cells[row, 2].Text.TrimStart().TrimEnd())
+                                {
+                                    svChanges["Period"] = (existingSv.Period.ToString("yyyy-MM-dd").TrimStart().TrimEnd(), worksheet.Cells[row, 2].Text.TrimStart().TrimEnd());
+                                }
+
+                                if (existingSv.Amount.ToString("F2").TrimStart().TrimEnd() != decimal.Parse(worksheet.Cells[row, 3].Text).ToString("F2").TrimStart().TrimEnd())
+                                {
+                                    svChanges["Amount"] = (existingSv.Amount.ToString("F2").TrimStart().TrimEnd(), decimal.Parse(worksheet.Cells[row, 3].Text).ToString("F2").TrimStart().TrimEnd());
+                                }
+
+                                if (existingSv.Total.ToString("F2").TrimStart().TrimEnd() != decimal.Parse(worksheet.Cells[row, 4].Text).ToString("F2").TrimStart().TrimEnd())
+                                {
+                                    svChanges["Total"] = (existingSv.Total.ToString("F2").TrimStart().TrimEnd(), decimal.Parse(worksheet.Cells[row, 4].Text).ToString("F2").TrimStart().TrimEnd());
+                                }
+
+                                if (existingSv.Discount.ToString("F2").TrimStart().TrimEnd() != decimal.Parse(worksheet.Cells[row, 5].Text).ToString("F2").TrimStart().TrimEnd())
+                                {
+                                    svChanges["Discount"] = (existingSv.Discount.ToString("F2").TrimStart().TrimEnd(), decimal.Parse(worksheet.Cells[row, 5].Text).ToString("F2").TrimStart().TrimEnd());
+                                }
+
+                                if (existingSv.CurrentAndPreviousAmount.ToString("F2").TrimStart().TrimEnd() != decimal.Parse(worksheet.Cells[row, 6].Text).ToString("F2").TrimStart().TrimEnd())
+                                {
+                                    svChanges["CurrentAndPreviousAmount"] = (existingSv.CurrentAndPreviousAmount.ToString("F2").TrimStart().TrimEnd(), decimal.Parse(worksheet.Cells[row, 6].Text).ToString("F2").TrimStart().TrimEnd());
+                                }
+
+                                if (existingSv.UnearnedAmount.ToString("F2").TrimStart().TrimEnd() != decimal.Parse(worksheet.Cells[row, 7].Text).ToString("F2").TrimStart().TrimEnd())
+                                {
+                                    svChanges["UnearnedAmount"] = (existingSv.UnearnedAmount.ToString("F2").TrimStart().TrimEnd(), decimal.Parse(worksheet.Cells[row, 7].Text).ToString("F2").TrimStart().TrimEnd());
+                                }
+
+                                if (existingSv.Status.TrimStart().TrimEnd() != worksheet.Cells[row, 8].Text.TrimStart().TrimEnd())
+                                {
+                                    svChanges["Status"] = (existingSv.Status.TrimStart().TrimEnd(), worksheet.Cells[row, 8].Text.TrimStart().TrimEnd());
+                                }
+
+                                if (existingSv.Instructions!.TrimStart().TrimEnd() != worksheet.Cells[row, 11].Text.TrimStart().TrimEnd())
+                                {
+                                    svChanges["Instructions"] = (existingSv.Instructions.TrimStart().TrimEnd(), worksheet.Cells[row, 11].Text.TrimStart().TrimEnd());
+                                }
+
+                                if (existingSv.CreatedBy!.TrimStart().TrimEnd() != worksheet.Cells[row, 13].Text.TrimStart().TrimEnd())
+                                {
+                                    svChanges["CreatedBy"] = (existingSv.CreatedBy.TrimStart().TrimEnd(), worksheet.Cells[row, 13].Text.TrimStart().TrimEnd());
+                                }
+
+                                if (existingSv.CreatedDate.ToString("yyyy-MM-dd hh:mm:ss.ffffff").TrimStart().TrimEnd() != worksheet.Cells[row, 14].Text.TrimStart().TrimEnd())
+                                {
+                                    svChanges["CreatedDate"] = (existingSv.CreatedDate.ToString("yyyy-MM-dd hh:mm:ss.ffffff").TrimStart().TrimEnd(), worksheet.Cells[row, 14].Text.TrimStart().TrimEnd());
+                                }
+
+                                if ((string.IsNullOrWhiteSpace(existingSv.CancellationRemarks?.TrimStart().TrimEnd()) ? "" : existingSv.CancellationRemarks.TrimStart().TrimEnd()) != worksheet.Cells[row, 15].Text.TrimStart().TrimEnd())
+                                {
+                                    svChanges["CancellationRemarks"] = (existingSv.CancellationRemarks?.TrimStart().TrimEnd(), worksheet.Cells[row, 15].Text.TrimStart().TrimEnd())!;
+                                }
+
+                                if (existingSv.OriginalCustomerId.ToString()!.TrimStart().TrimEnd() != worksheet.Cells[row, 16].Text.TrimStart().TrimEnd())
+                                {
+                                    svChanges["OriginalCustomerId"] = (existingSv.OriginalCustomerId.ToString()!.TrimStart().TrimEnd(), worksheet.Cells[row, 16].Text.TrimStart().TrimEnd());
+                                }
+
+                                if (existingSv.OriginalSeriesNumber!.TrimStart().TrimEnd() != worksheet.Cells[row, 17].Text.TrimStart().TrimEnd())
+                                {
+                                    svChanges["OriginalSeriesNumber"] = (existingSv.OriginalSeriesNumber.TrimStart().TrimEnd(), worksheet.Cells[row, 17].Text.TrimStart().TrimEnd());
+                                }
+
+                                if (existingSv.OriginalServicesId.ToString()!.TrimStart().TrimEnd() != worksheet.Cells[row, 18].Text.TrimStart().TrimEnd())
+                                {
+                                    svChanges["OriginalServicesId"] = (existingSv.OriginalServicesId.ToString()!.TrimStart().TrimEnd(), worksheet.Cells[row, 18].Text.TrimStart().TrimEnd());
+                                }
+
+                                if (existingSv.OriginalDocumentId.ToString().TrimStart().TrimEnd() != worksheet.Cells[row, 19].Text.TrimStart().TrimEnd())
+                                {
+                                    svChanges["OriginalDocumentId"] = (existingSv.OriginalDocumentId.ToString().TrimStart().TrimEnd(), worksheet.Cells[row, 19].Text.TrimStart().TrimEnd());
+                                }
+
+                                if (svChanges.Any())
+                                {
+                                    await _serviceInvoiceRepo.LogChangesAsync(existingSv.OriginalDocumentId, svChanges, _userManager.GetUserName(this.User), existingSv.ServiceInvoiceNo);
+                                }
+
+                                continue;
+                            }
+                            else
+                            {
+                                #region --Audit Trail Recording
+
+                                if (!serviceInvoice.CreatedBy.IsNullOrEmpty())
+                                {
+                                    var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
+                                    AuditTrail auditTrailBook = new(serviceInvoice.CreatedBy, $"Create new service invoice# {serviceInvoice.ServiceInvoiceNo}", "Service Invoice", ipAddress!, serviceInvoice.CreatedDate);
+                                    await _dbContext.AddAsync(auditTrailBook, cancellationToken);
+                                }
+                                if (!serviceInvoice.PostedBy.IsNullOrEmpty())
+                                {
+                                    var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
+                                    AuditTrail auditTrailBook = new(serviceInvoice.PostedBy, $"Posted service invoice# {serviceInvoice.ServiceInvoiceNo}", "Service Invoice", ipAddress!, serviceInvoice.PostedDate);
+                                    await _dbContext.AddAsync(auditTrailBook, cancellationToken);
+                                }
+
+                                #endregion --Audit Trail Recording
                             }
 
-                            if (existingSv.Period.ToString("yyyy-MM-dd").TrimStart().TrimEnd() != worksheet.Cells[row, 2].Text.TrimStart().TrimEnd())
-                            {
-                                svChanges["Period"] = (existingSv.Period.ToString("yyyy-MM-dd").TrimStart().TrimEnd(), worksheet.Cells[row, 2].Text.TrimStart().TrimEnd());
-                            }
+                            serviceInvoice.CustomerId = await _dbContext.Customers
+                                .Where(sv => sv.OriginalCustomerId == serviceInvoice.OriginalCustomerId)
+                                .Select(sv => (int?)sv.CustomerId)
+                                .FirstOrDefaultAsync(cancellationToken) ?? throw new InvalidOperationException("Please upload the Excel file for the customer master file first.");
 
-                            if (existingSv.Amount.ToString("F2").TrimStart().TrimEnd() != decimal.Parse(worksheet.Cells[row, 3].Text).ToString("F2").TrimStart().TrimEnd())
-                            {
-                                svChanges["Amount"] = (existingSv.Amount.ToString("F2").TrimStart().TrimEnd(), decimal.Parse(worksheet.Cells[row, 3].Text).ToString("F2").TrimStart().TrimEnd());
-                            }
+                            serviceInvoice.ServicesId = await _dbContext.Services
+                                .Where(sv => sv.OriginalServiceId == serviceInvoice.OriginalServicesId)
+                                .Select(sv => (int?)sv.ServiceId)
+                                .FirstOrDefaultAsync(cancellationToken) ?? throw new InvalidOperationException("Please upload the Excel file for the service master file first.");
 
-                            if (existingSv.Total.ToString("F2").TrimStart().TrimEnd() != decimal.Parse(worksheet.Cells[row, 4].Text).ToString("F2").TrimStart().TrimEnd())
-                            {
-                                svChanges["Total"] = (existingSv.Total.ToString("F2").TrimStart().TrimEnd(), decimal.Parse(worksheet.Cells[row, 4].Text).ToString("F2").TrimStart().TrimEnd());
-                            }
-
-                            if (existingSv.Discount.ToString("F2").TrimStart().TrimEnd() != decimal.Parse(worksheet.Cells[row, 5].Text).ToString("F2").TrimStart().TrimEnd())
-                            {
-                                svChanges["Discount"] = (existingSv.Discount.ToString("F2").TrimStart().TrimEnd(), decimal.Parse(worksheet.Cells[row, 5].Text).ToString("F2").TrimStart().TrimEnd());
-                            }
-
-                            if (existingSv.CurrentAndPreviousAmount.ToString("F2").TrimStart().TrimEnd() != decimal.Parse(worksheet.Cells[row, 6].Text).ToString("F2").TrimStart().TrimEnd())
-                            {
-                                svChanges["CurrentAndPreviousAmount"] = (existingSv.CurrentAndPreviousAmount.ToString("F2").TrimStart().TrimEnd(), decimal.Parse(worksheet.Cells[row, 6].Text).ToString("F2").TrimStart().TrimEnd());
-                            }
-
-                            if (existingSv.UnearnedAmount.ToString("F2").TrimStart().TrimEnd() != decimal.Parse(worksheet.Cells[row, 7].Text).ToString("F2").TrimStart().TrimEnd())
-                            {
-                                svChanges["UnearnedAmount"] = (existingSv.UnearnedAmount.ToString("F2").TrimStart().TrimEnd(), decimal.Parse(worksheet.Cells[row, 7].Text).ToString("F2").TrimStart().TrimEnd());
-                            }
-
-                            if (existingSv.Status.TrimStart().TrimEnd() != worksheet.Cells[row, 8].Text.TrimStart().TrimEnd())
-                            {
-                                svChanges["Status"] = (existingSv.Status.TrimStart().TrimEnd(), worksheet.Cells[row, 8].Text.TrimStart().TrimEnd());
-                            }
-
-                            if (existingSv.Instructions!.TrimStart().TrimEnd() != worksheet.Cells[row, 11].Text.TrimStart().TrimEnd())
-                            {
-                                svChanges["Instructions"] = (existingSv.Instructions.TrimStart().TrimEnd(), worksheet.Cells[row, 11].Text.TrimStart().TrimEnd());
-                            }
-
-                            if (existingSv.CreatedBy!.TrimStart().TrimEnd() != worksheet.Cells[row, 13].Text.TrimStart().TrimEnd())
-                            {
-                                svChanges["CreatedBy"] = (existingSv.CreatedBy.TrimStart().TrimEnd(), worksheet.Cells[row, 13].Text.TrimStart().TrimEnd());
-                            }
-
-                            if (existingSv.CreatedDate.ToString("yyyy-MM-dd hh:mm:ss.ffffff").TrimStart().TrimEnd() != worksheet.Cells[row, 14].Text.TrimStart().TrimEnd())
-                            {
-                                svChanges["CreatedDate"] = (existingSv.CreatedDate.ToString("yyyy-MM-dd hh:mm:ss.ffffff").TrimStart().TrimEnd(), worksheet.Cells[row, 14].Text.TrimStart().TrimEnd());
-                            }
-
-                            if ((string.IsNullOrWhiteSpace(existingSv.CancellationRemarks?.TrimStart().TrimEnd()) ? "" : existingSv.CancellationRemarks.TrimStart().TrimEnd()) != worksheet.Cells[row, 15].Text.TrimStart().TrimEnd())
-                            {
-                                svChanges["CancellationRemarks"] = (existingSv.CancellationRemarks?.TrimStart().TrimEnd(), worksheet.Cells[row, 15].Text.TrimStart().TrimEnd())!;
-                            }
-
-                            if (existingSv.OriginalCustomerId.ToString()!.TrimStart().TrimEnd() != worksheet.Cells[row, 16].Text.TrimStart().TrimEnd())
-                            {
-                                svChanges["OriginalCustomerId"] = (existingSv.OriginalCustomerId.ToString()!.TrimStart().TrimEnd(), worksheet.Cells[row, 16].Text.TrimStart().TrimEnd());
-                            }
-
-                            if (existingSv.OriginalSeriesNumber!.TrimStart().TrimEnd() != worksheet.Cells[row, 17].Text.TrimStart().TrimEnd())
-                            {
-                                svChanges["OriginalSeriesNumber"] = (existingSv.OriginalSeriesNumber.TrimStart().TrimEnd(), worksheet.Cells[row, 17].Text.TrimStart().TrimEnd());
-                            }
-
-                            if (existingSv.OriginalServicesId.ToString()!.TrimStart().TrimEnd() != worksheet.Cells[row, 18].Text.TrimStart().TrimEnd())
-                            {
-                                svChanges["OriginalServicesId"] = (existingSv.OriginalServicesId.ToString()!.TrimStart().TrimEnd(), worksheet.Cells[row, 18].Text.TrimStart().TrimEnd());
-                            }
-
-                            if (existingSv.OriginalDocumentId.ToString().TrimStart().TrimEnd() != worksheet.Cells[row, 19].Text.TrimStart().TrimEnd())
-                            {
-                                svChanges["OriginalDocumentId"] = (existingSv.OriginalDocumentId.ToString().TrimStart().TrimEnd(), worksheet.Cells[row, 19].Text.TrimStart().TrimEnd());
-                            }
-
-                            if (svChanges.Any())
-                            {
-                                await _serviceInvoiceRepo.LogChangesAsync(existingSv.OriginalDocumentId, svChanges, _userManager.GetUserName(this.User), existingSv.ServiceInvoiceNo);
-                            }
-
-                            continue;
+                            await _dbContext.ServiceInvoices.AddAsync(serviceInvoice, cancellationToken);
                         }
-                        else
+                        await _dbContext.SaveChangesAsync(cancellationToken);
+                        await transaction.CommitAsync(cancellationToken);
+
+                        var checkChangesOfRecord = await _dbContext.ImportExportLogs
+                            .Where(iel => iel.Action == string.Empty).ToListAsync(cancellationToken);
+                        if (checkChangesOfRecord.Any())
                         {
-                            #region --Audit Trail Recording
-
-                            if (!serviceInvoice.CreatedBy.IsNullOrEmpty())
-                            {
-                                var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
-                                AuditTrail auditTrailBook = new(serviceInvoice.CreatedBy, $"Create new service invoice# {serviceInvoice.ServiceInvoiceNo}", "Service Invoice", ipAddress!, serviceInvoice.CreatedDate);
-                                await _dbContext.AddAsync(auditTrailBook, cancellationToken);
-                            }
-                            if (!serviceInvoice.PostedBy.IsNullOrEmpty())
-                            {
-                                var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
-                                AuditTrail auditTrailBook = new(serviceInvoice.PostedBy, $"Posted service invoice# {serviceInvoice.ServiceInvoiceNo}", "Service Invoice", ipAddress!, serviceInvoice.PostedDate);
-                                await _dbContext.AddAsync(auditTrailBook, cancellationToken);
-                            }
-
-                            #endregion --Audit Trail Recording
+                            TempData["importChanges"] = "";
                         }
-
-                        serviceInvoice.CustomerId = await _dbContext.Customers
-                            .Where(sv => sv.OriginalCustomerId == serviceInvoice.OriginalCustomerId)
-                            .Select(sv => (int?)sv.CustomerId)
-                            .FirstOrDefaultAsync(cancellationToken) ?? throw new InvalidOperationException("Please upload the Excel file for the customer master file first.");
-
-                        serviceInvoice.ServicesId = await _dbContext.Services
-                            .Where(sv => sv.OriginalServiceId == serviceInvoice.OriginalServicesId)
-                            .Select(sv => (int?)sv.ServiceId)
-                            .FirstOrDefaultAsync(cancellationToken) ?? throw new InvalidOperationException("Please upload the Excel file for the service master file first.");
-
-                        await _dbContext.ServiceInvoices.AddAsync(serviceInvoice, cancellationToken);
+                        TempData["success"] = "Uploading Success!";
                     }
-                    await _dbContext.SaveChangesAsync(cancellationToken);
-                    await transaction.CommitAsync(cancellationToken);
-
-                    var checkChangesOfRecord = await _dbContext.ImportExportLogs
-                        .Where(iel => iel.Action == string.Empty).ToListAsync(cancellationToken);
-                    if (checkChangesOfRecord.Any())
+                    else
                     {
-                        TempData["importChanges"] = "";
+                        TempData["warning"] = "The Uploaded Excel file is not related to AAS.";
                     }
                 }
                 catch (OperationCanceledException oce)
@@ -968,7 +976,7 @@ namespace Accounting_System.Controllers
                     return RedirectToAction(nameof(Index), new { view = DynamicView.ServiceInvoice });
                 }
             }
-            TempData["success"] = "Uploading Success!";
+
             return RedirectToAction(nameof(Index), new { view = DynamicView.ServiceInvoice });
         }
 

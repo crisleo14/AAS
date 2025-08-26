@@ -207,45 +207,53 @@ namespace Accounting_System.Controllers
 
                 try
                 {
-                    using var package = new ExcelPackage(stream);
-                    var worksheet = package.Workbook.Worksheets.FirstOrDefault();
-                    if (worksheet == null)
+                    if (file.FileName.Contains(CS.Name))
                     {
-                        TempData["error"] = "The Excel file contains no worksheets.";
-                        return RedirectToAction(nameof(Index), new { view = DynamicView.Product });
-                    }
-                    if (worksheet.ToString() != nameof(DynamicView.Product))
-                    {
-                        TempData["error"] = "The Excel file is not related to product master file.";
-                        return RedirectToAction(nameof(Index), new { view = DynamicView.Product });
-                    }
-
-                    var rowCount = worksheet.Dimension.Rows;
-                    var productList = await _dbContext
-                        .Products
-                        .ToListAsync(cancellationToken);
-
-                    for (int row = 2; row <= rowCount; row++)  // Assuming the first row is the header
-                    {
-                        var product = new Product
+                        using var package = new ExcelPackage(stream);
+                        var worksheet = package.Workbook.Worksheets.FirstOrDefault();
+                        if (worksheet == null)
                         {
-                            ProductCode = worksheet.Cells[row, 1].Text,
-                            ProductName = CultureInfo.CurrentCulture.TextInfo.ToTitleCase(worksheet.Cells[row, 2].Text.ToLower()),
-                            ProductUnit = worksheet.Cells[row, 3].Text,
-                            CreatedBy = worksheet.Cells[row, 4].Text,
-                            CreatedDate = DateTime.TryParse(worksheet.Cells[row, 5].Text, out DateTime createdDate) ? createdDate : default,
-                            OriginalProductId = int.TryParse(worksheet.Cells[row, 6].Text, out int originalProductId) ? originalProductId : 0,
-                        };
-
-                        if (productList.Any(p => p.OriginalProductId == product.OriginalProductId))
+                            TempData["error"] = "The Excel file contains no worksheets.";
+                            return RedirectToAction(nameof(Index), new { view = DynamicView.Product });
+                        }
+                        if (worksheet.ToString() != nameof(DynamicView.Product))
                         {
-                            continue;
+                            TempData["error"] = "The Excel file is not related to product master file.";
+                            return RedirectToAction(nameof(Index), new { view = DynamicView.Product });
                         }
 
-                        await _dbContext.Products.AddAsync(product, cancellationToken);
+                        var rowCount = worksheet.Dimension.Rows;
+                        var productList = await _dbContext
+                            .Products
+                            .ToListAsync(cancellationToken);
+
+                        for (int row = 2; row <= rowCount; row++)  // Assuming the first row is the header
+                        {
+                            var product = new Product
+                            {
+                                ProductCode = worksheet.Cells[row, 1].Text,
+                                ProductName = CultureInfo.CurrentCulture.TextInfo.ToTitleCase(worksheet.Cells[row, 2].Text.ToLower()),
+                                ProductUnit = worksheet.Cells[row, 3].Text,
+                                CreatedBy = worksheet.Cells[row, 4].Text,
+                                CreatedDate = DateTime.TryParse(worksheet.Cells[row, 5].Text, out DateTime createdDate) ? createdDate : default,
+                                OriginalProductId = int.TryParse(worksheet.Cells[row, 6].Text, out int originalProductId) ? originalProductId : 0,
+                            };
+
+                            if (productList.Any(p => p.OriginalProductId == product.OriginalProductId))
+                            {
+                                continue;
+                            }
+
+                            await _dbContext.Products.AddAsync(product, cancellationToken);
+                        }
+                        await _dbContext.SaveChangesAsync(cancellationToken);
+                        await transaction.CommitAsync(cancellationToken);
+                        TempData["success"] = "Uploading Success!";
                     }
-                    await _dbContext.SaveChangesAsync(cancellationToken);
-                    await transaction.CommitAsync(cancellationToken);
+                    else
+                    {
+                        TempData["warning"] = "The Uploaded Excel file is not related to AAS.";
+                    }
                 }
                 catch (OperationCanceledException oce)
                 {
@@ -260,7 +268,7 @@ namespace Accounting_System.Controllers
                     return RedirectToAction(nameof(Index), new { view = DynamicView.Product });
                 }
             }
-            TempData["success"] = "Uploading Success!";
+
             return RedirectToAction(nameof(Index), new { view = DynamicView.Product });
         }
 

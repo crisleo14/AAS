@@ -178,50 +178,59 @@ namespace Accounting_System.Controllers
                 await using var transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
                 try
                 {
-                    using var package = new ExcelPackage(stream);
-                    var worksheet = package.Workbook.Worksheets.FirstOrDefault();
-                    if (worksheet == null)
+                    if (file.FileName.Contains(CS.Name))
                     {
-                        TempData["error"] = "The Excel file contains no worksheets.";
-                        return RedirectToAction(nameof(Index), new { view = DynamicView.BankAccount });
-                    }
-
-                    if (worksheet.ToString() != nameof(DynamicView.BankAccount))
-                    {
-                        TempData["error"] = "The Excel file is not related to bank account master file.";
-                        return RedirectToAction(nameof(Index), new { view = DynamicView.BankAccount });
-                    }
-
-                    var rowCount = worksheet.Dimension.Rows;
-                    var bankAccountList = await _dbContext
-                        .BankAccounts
-                        .ToListAsync(cancellationToken);
-
-                    for (int row = 2; row <= rowCount; row++) // Assuming the first row is the header
-                    {
-                        var bankAccount = new BankAccount
+                        using var package = new ExcelPackage(stream);
+                        var worksheet = package.Workbook.Worksheets.FirstOrDefault();
+                        if (worksheet == null)
                         {
-                            Bank = worksheet.Cells[row, 6].Text,
-                            AccountName = worksheet.Cells[row, 4].Text,
-                            CreatedBy = worksheet.Cells[row, 2].Text,
-                            CreatedDate = DateTime.TryParse(worksheet.Cells[row, 3].Text, out DateTime createdDate)
-                                ? createdDate
-                                : default,
-                            OriginalBankId = int.TryParse(worksheet.Cells[row, 7].Text, out int originalBankId)
-                                ? originalBankId
-                                : 0,
-                        };
-
-                        if (bankAccountList.Any(ba => ba.OriginalBankId == bankAccount.OriginalBankId))
-                        {
-                            continue;
+                            TempData["error"] = "The Excel file contains no worksheets.";
+                            return RedirectToAction(nameof(Index), new { view = DynamicView.BankAccount });
                         }
 
-                        await _dbContext.BankAccounts.AddAsync(bankAccount, cancellationToken);
-                    }
+                        if (worksheet.ToString() != nameof(DynamicView.BankAccount))
+                        {
+                            TempData["error"] = "The Excel file is not related to bank account master file.";
+                            return RedirectToAction(nameof(Index), new { view = DynamicView.BankAccount });
+                        }
 
-                    await _dbContext.SaveChangesAsync(cancellationToken);
-                    await transaction.CommitAsync(cancellationToken);
+                        var rowCount = worksheet.Dimension.Rows;
+                        var bankAccountList = await _dbContext
+                            .BankAccounts
+                            .ToListAsync(cancellationToken);
+
+                        for (int row = 2; row <= rowCount; row++) // Assuming the first row is the header
+                        {
+                            var bankAccount = new BankAccount
+                            {
+                                Bank = worksheet.Cells[row, 6].Text,
+                                AccountName = worksheet.Cells[row, 4].Text,
+                                CreatedBy = worksheet.Cells[row, 2].Text,
+                                CreatedDate = DateTime.TryParse(worksheet.Cells[row, 3].Text, out DateTime createdDate)
+                                    ? createdDate
+                                    : default,
+                                OriginalBankId = int.TryParse(worksheet.Cells[row, 7].Text, out int originalBankId)
+                                    ? originalBankId
+                                    : 0,
+                            };
+
+                            if (bankAccountList.Any(ba => ba.OriginalBankId == bankAccount.OriginalBankId))
+                            {
+                                continue;
+                            }
+
+                            await _dbContext.BankAccounts.AddAsync(bankAccount, cancellationToken);
+                        }
+
+                        await _dbContext.SaveChangesAsync(cancellationToken);
+                        await transaction.CommitAsync(cancellationToken);
+
+                        TempData["success"] = "Uploading Success!";
+                    }
+                    else
+                    {
+                        TempData["warning"] = "The Uploaded Excel file is not related to AAS.";
+                    }
                 }
                 catch (OperationCanceledException oce)
                 {
@@ -236,8 +245,6 @@ namespace Accounting_System.Controllers
                     return RedirectToAction(nameof(Index), new { view = DynamicView.BankAccount });
                 }
             }
-
-            TempData["success"] = "Uploading Success!";
             return RedirectToAction(nameof(Index), new { view = DynamicView.BankAccount });
         }
 

@@ -53,5 +53,7 @@
         public const string Date_Format = "MMM dd, yyyy";
 
         #endregion Format string
+
+        public const string Name = "IBS-RCD";
     }
 }
