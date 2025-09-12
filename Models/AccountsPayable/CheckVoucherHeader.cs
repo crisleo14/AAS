@@ -108,7 +108,7 @@ namespace Accounting_System.Models.AccountsPayable
         [StringLength(50)]
         public string? AccruedType { get; set; }
 
-        [StringLength(13)]
+        [StringLength(2000)]
         public string? Reference { get; set; }
 
         [NotMapped]
