@@ -20,6 +20,7 @@
     <div class="card-body p-4">
         <form asp-action="Edit" method="post" enctype="multipart/form-data">
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <input type="hidden" asp-for="SupplierId" value="@Model.SupplierId"/>
             <fieldset class="form-group mb-3">
                 <legend>Select Category</legend>
 
