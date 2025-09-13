@@ -20,6 +20,7 @@
     <div class="card-body p-4">
         <form asp-action="Edit">
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <input type="hidden" asp-for="BankAccountId" value="@Model.BankAccountId"/>
             <div class="form-floating mb-3">
                 <input asp-for="AccountName" class="form-control" placeholder=""/>
                 <label asp-for="AccountName" class="control-label">Account Name<span class="required">*</span></label>
