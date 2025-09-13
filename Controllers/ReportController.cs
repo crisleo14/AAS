@@ -1342,7 +1342,7 @@ namespace Accounting_System.Controllers
 
             foreach (var cv in disbursementBooks)
             {
-                worksheet.Cells[row, 1].Value = cv.Date;
+                worksheet.Cells[row, 1].Value = cv.Date.ToString(CS.BIR_Date_Format);;
                 worksheet.Cells[row, 2].Value = cv.CVNo;
                 worksheet.Cells[row, 3].Value = cv.Payee;
                 worksheet.Cells[row, 4].Value = cv.Particulars;
@@ -1456,7 +1456,7 @@ namespace Accounting_System.Controllers
 
             foreach (var cashReceipt in cashReceiptBooks)
             {
-                worksheet.Cells[row, 1].Value = cashReceipt.Date;
+                worksheet.Cells[row, 1].Value = cashReceipt.Date.ToString(CS.BIR_Date_Format);;
                 worksheet.Cells[row, 2].Value = cashReceipt.RefNo;
                 worksheet.Cells[row, 3].Value = cashReceipt.CustomerName;
                 worksheet.Cells[row, 4].Value = cashReceipt.Bank;
@@ -1566,7 +1566,7 @@ namespace Accounting_System.Controllers
 
             foreach (var gl in generalBooks)
             {
-                worksheet.Cells[row, 1].Value = gl.Date;
+                worksheet.Cells[row, 1].Value = gl.Date.ToString(CS.BIR_Date_Format);;
                 worksheet.Cells[row, 2].Value = gl.Reference;
                 worksheet.Cells[row, 3].Value = gl.Description;
                 worksheet.Cells[row, 4].Value = $"{gl.AccountNo} {gl.AccountTitle}";
@@ -1684,7 +1684,7 @@ namespace Accounting_System.Controllers
                 {
                     totalPriceUnitAmount = getLastRecordCost;
                 }
-                worksheet.Cells[row, 1].Value = inventory.Date;
+                worksheet.Cells[row, 1].Value = inventory.Date.ToString(CS.BIR_Date_Format);;
                 worksheet.Cells[row, 2].Value = inventory.Product.ProductCode;
                 worksheet.Cells[row, 3].Value = inventory.Product.ProductName;
                 worksheet.Cells[row, 4].Value = inventory.Product.ProductUnit;
@@ -1795,7 +1795,7 @@ namespace Accounting_System.Controllers
 
             foreach (var jv in journalBooks)
             {
-                worksheet.Cells[row, 1].Value = jv.Date;
+                worksheet.Cells[row, 1].Value = jv.Date.ToString(CS.BIR_Date_Format);;
                 worksheet.Cells[row, 2].Value = jv.Reference;
                 worksheet.Cells[row, 3].Value = jv.Description;
                 worksheet.Cells[row, 4].Value = jv.AccountTitle;
@@ -1925,7 +1925,7 @@ namespace Accounting_System.Controllers
 
             foreach (var pb in purchaseBooks)
             {
-                worksheet.Cells[row, 1].Value = pb.Date;
+                worksheet.Cells[row, 1].Value = pb.Date.ToString(CS.BIR_Date_Format);;
                 worksheet.Cells[row, 2].Value = pb.SupplierName;
                 worksheet.Cells[row, 3].Value = pb.SupplierTin;
                 worksheet.Cells[row, 4].Value = pb.SupplierAddress;
@@ -2063,7 +2063,7 @@ namespace Accounting_System.Controllers
 
             foreach (var cv in salesBook)
             {
-                worksheet.Cells[row, 1].Value = cv.TransactionDate;
+                worksheet.Cells[row, 1].Value = cv.TransactionDate.ToString(CS.BIR_Date_Format);;
                 worksheet.Cells[row, 2].Value = cv.SerialNo;
                 worksheet.Cells[row, 3].Value = cv.SoldTo;
                 worksheet.Cells[row, 4].Value = cv.TinNo;

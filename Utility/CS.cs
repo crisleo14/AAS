@@ -51,6 +51,7 @@
         public const string Two_Decimal_Format = "N2";
         public const string Four_Decimal_Format = "N4";
         public const string Date_Format = "MMM dd, yyyy";
+        public const string BIR_Date_Format = "MM/dd/yyyy";
 
         #endregion Format string
 
