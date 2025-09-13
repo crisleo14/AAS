@@ -378,16 +378,16 @@
                                 $("#poNo").text(data.poNo);
                                 $("#siNo").text(data.siNo);
                                 $("#payee").text(data.payee);
-                                $("#amount").text(data.amount);
+                                $("#amount").text(formatNumber(data.amount));
                                 $("#particulars").text(data.particulars);
                                 $("#checkNo").text(data.checkNo);
-                                $("#totalDebit").text(data.totalDebit);
-                                $("#totalCredit").text(data.totalCredit);
+                                $("#totalDebit").text(formatNumber(data.totalDebit));
+                                $("#totalCredit").text(formatNumber(data.totalCredit));
                                 for (let i = 0; i < data.accountNo.length; i++) {
                                     let row = $("<tr></tr>");
                                     row.append("<td style='width:60%; padding-left:20px;'>" + data.accountNo[i] + " " + data.accountName[i] + "</td>");
-                                    row.append("<td class='text-end' style='width:7%;'>" + data.debit[i] + "</td>");
-                                    row.append("<td class='text-end' style='width:7%;'>" + data.credit[i] + "</td>");
+                                    row.append("<td class='text-end' style='width:7%;'>" + formatNumber(data.debit[i]) + "</td>");
+                                    row.append("<td class='text-end' style='width:7%;'>" + formatNumber(data.credit[i]) + "</td>");
                                     tableBody.append(row);
                                 }
                             } else {
