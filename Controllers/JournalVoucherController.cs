@@ -691,9 +691,9 @@ namespace Accounting_System.Controllers
                             var details = existingModel.Details.First(o => o.JournalVoucherDetailId == detailsId);
 
                             var acctNo = await _dbContext.ChartOfAccounts
-                                .FirstOrDefaultAsync(x => x.AccountName == viewModel.AccountTitle[i], cancellationToken: cancellationToken);
+                                .FirstOrDefaultAsync(x => x.AccountName == viewModel.AccountNumber![i], cancellationToken: cancellationToken);
 
-                            details.AccountNo = acctNo?.AccountNumber ?? "";
+                            details.AccountNo = acctNo!.AccountNumber;
                             details.AccountName = viewModel.AccountTitle[i];
                             details.Debit = viewModel.Debit[i];
                             details.Credit = viewModel.Credit[i];
