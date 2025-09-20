@@ -59,50 +59,5 @@ namespace Accounting_System.Repository
                 throw new InvalidOperationException($"Check voucher with id '{invoiceVoucherId}' not found.");
             }
         }
-
-        public async Task LogChangesAsync(int id, Dictionary<string, (string OriginalValue, string NewValue)> changes, string? modifiedBy, string seriesNumber)
-        {
-            foreach (var change in changes)
-            {
-                var logReport = new ImportExportLog()
-                {
-                    Id = Guid.NewGuid(),
-                    TableName = "CheckVoucherHeader",
-                    DocumentRecordId = id,
-                    ColumnName = change.Key,
-                    Module = "Check Voucher Header",
-                    OriginalValue = change.Value.OriginalValue,
-                    AdjustedValue = change.Value.NewValue,
-                    TimeStamp = DateTime.Now,
-                    UploadedBy = modifiedBy,
-                    Action = string.Empty,
-                    Executed = false
-                };
-                await _dbContext.AddAsync(logReport);
-            }
-        }
-
-        public async Task LogChangesForCVDAsync(int? id, Dictionary<string, (string OriginalValue, string NewValue)> changes, string? modifiedBy, string seriesNumber)
-        {
-            foreach (var change in changes)
-            {
-                var logReport = new ImportExportLog()
-                {
-                    Id = Guid.NewGuid(),
-                    TableName = "CheckVoucherDetails",
-                    DocumentRecordId = id!.Value,
-                    ColumnName = change.Key,
-                    Module = "Check Voucher Details",
-                    OriginalValue = change.Value.OriginalValue,
-                    AdjustedValue = change.Value.NewValue,
-                    TimeStamp = DateTime.Now,
-                    UploadedBy = modifiedBy,
-                    Action = string.Empty,
-                    Executed = false,
-                    DocumentNo = seriesNumber
-                };
-                await _dbContext.AddAsync(logReport);
-            }
-        }
     }
 }

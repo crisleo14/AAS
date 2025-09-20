@@ -29,14 +29,10 @@ namespace Accounting_System.Controllers
             _coaRepo = coaRepo;
         }
 
-        public async Task<IActionResult> Index(string? view, CancellationToken cancellationToken)
+        public async Task<IActionResult> Index(CancellationToken cancellationToken)
         {
             var chartOfAccounts = await _coaRepo.GetChartOfAccountAsync(cancellationToken);
 
-            if (view == nameof(DynamicView.ChartOfAccount))
-            {
-                return View("ImportExportIndex", chartOfAccounts);
-            }
             return View(chartOfAccounts);
         }
 
@@ -233,127 +229,5 @@ namespace Accounting_System.Controllers
         {
             return Json(await _coaRepo.GenerateNumberAsync(parent, cancellationToken));
         }
-
-        //Upload as .xlsx file.(Import)
-        #region -- import xlsx record --
-
-        [HttpPost]
-        public async Task<IActionResult> Import(IFormFile file, CancellationToken cancellationToken)
-        {
-            if (file.Length == 0)
-            {
-                return RedirectToAction(nameof(Index));
-            }
-
-            using (var stream = new MemoryStream())
-            {
-                await file.CopyToAsync(stream, cancellationToken);
-                stream.Position = 0;
-                await using var transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
-
-                try
-                {
-                    if (file.FileName.Contains(CS.Name))
-                    {
-                        using var package = new ExcelPackage(stream);
-                        var worksheet = package.Workbook.Worksheets.FirstOrDefault();
-                        if (worksheet == null)
-                        {
-                            TempData["error"] = "The Excel file contains no worksheets.";
-                            return RedirectToAction(nameof(Index), new { view = DynamicView.ChartOfAccount });
-                        }
-                        if (worksheet.ToString() != nameof(DynamicView.ChartOfAccount))
-                        {
-                            TempData["error"] = "The Excel file is not related to chart of account.";
-                            return RedirectToAction(nameof(Index), new { view = DynamicView.ChartOfAccount });
-                        }
-
-                        var rowCount = worksheet.Dimension.Rows;
-                        var chartOfAccountList = await _dbContext
-                            .ChartOfAccounts
-                            .ToListAsync(cancellationToken);
-
-                        for (int row = 2; row <= rowCount; row++)  // Assuming the first row is the header
-                        {
-                            ChartOfAccount? getParent = null;
-                            if (!worksheet.Cells[row, 12].Text.IsNullOrEmpty())
-                            {
-                                 getParent = await _dbContext.ChartOfAccounts.FirstOrDefaultAsync(x => x.ParentAccountId == int.Parse(worksheet.Cells[row, 12].Text), cancellationToken);
-                            }
-                            var coa = new ChartOfAccount
-                            {
-                                IsMain = bool.TryParse(worksheet.Cells[row, 1].Text, out bool isMain) && isMain,
-                                AccountNumber = worksheet.Cells[row, 2].Text,
-                                AccountName = worksheet.Cells[row, 3].Text,
-                                AccountType = worksheet.Cells[row, 4].Text,
-                                NormalBalance = worksheet.Cells[row, 5].Text,
-                                Level = int.TryParse(worksheet.Cells[row, 6].Text, out int level) ? level : 0,
-                                CreatedBy = worksheet.Cells[row, 7].Text,
-                                CreatedDate = DateTime.TryParse(worksheet.Cells[row, 8].Text, out DateTime createdDate) ? createdDate : default,
-                                EditedBy = worksheet.Cells[row, 9].Text,
-                                EditedDate = DateTime.TryParse(worksheet.Cells[row, 10].Text, out DateTime editedDate) ? editedDate : default,
-                                HasChildren = bool.TryParse(worksheet.Cells[row, 11].Text, out bool hasChildren) && hasChildren,
-                                ParentAccountId = getParent?.AccountId ?? null,
-                                OriginalChartOfAccountId = int.TryParse(worksheet.Cells[row, 13].Text, out int originalChartOfAccountId) ? originalChartOfAccountId : 0,
-                                Parent = worksheet.Cells[row, 14].Text ?? string.Empty,
-                            };
-
-                            if (chartOfAccountList.Any(c => c.OriginalChartOfAccountId == coa.OriginalChartOfAccountId))
-                            {
-                                continue;
-                            }
-
-                            await _dbContext.ChartOfAccounts.AddAsync(coa, cancellationToken);
-                            await _dbContext.SaveChangesAsync(cancellationToken);
-                        }
-
-
-                        //refresh data set
-                        chartOfAccountList = await _dbContext.ChartOfAccounts.ToListAsync(cancellationToken);
-
-                        var excelRowCount = worksheet.Dimension.Rows;
-
-                        for (int rows = 2; rows <= excelRowCount; rows++)  // Assuming the first row is the header
-                        {
-                            string cellValue = worksheet.Cells[rows, 12].Text;
-
-                            if (!string.IsNullOrEmpty(cellValue) || int.TryParse(cellValue, out int result) && result != 0)
-                            {
-                                var existingRecord =
-                                    chartOfAccountList.FirstOrDefault(c=> c.AccountNumber == worksheet.Cells[rows, 2].Text);
-                                var findAccountIdForParentAccountId =
-                                    chartOfAccountList.FirstOrDefault(c =>
-                                        c.OriginalChartOfAccountId == int.Parse(worksheet.Cells[rows, 12].Text));
-
-                                existingRecord!.ParentAccountId = findAccountIdForParentAccountId?.AccountId ?? null;
-                            }
-                        }
-
-                        await _dbContext.SaveChangesAsync(cancellationToken);
-                        await transaction.CommitAsync(cancellationToken);
-                        TempData["success"] = "Uploading Success!";
-                    }
-                    else
-                    {
-                        TempData["warning"] = "The Uploaded Excel file is not related to AAS.";
-                    }
-                }
-                catch (OperationCanceledException oce)
-                {
-                    await transaction.RollbackAsync(cancellationToken);
-                    TempData["error"] = oce.Message;
-                    return RedirectToAction(nameof(Index), new { view = DynamicView.ChartOfAccount });
-                }
-                catch (Exception ex)
-                {
-                    await transaction.RollbackAsync(cancellationToken);
-                    TempData["error"] = ex.Message;
-                    return RedirectToAction(nameof(Index), new { view = DynamicView.ChartOfAccount });
-                }
-            }
-            return RedirectToAction(nameof(Index), new { view = DynamicView.ChartOfAccount });
-        }
-
-        #endregion -- import xlsx record --
     }
 }

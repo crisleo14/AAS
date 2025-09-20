@@ -289,29 +289,6 @@ namespace Accounting_System.Repository
             }
         }
 
-        public async Task LogChangesAsync(int id, Dictionary<string, (string OriginalValue, string NewValue)> changes, string? modifiedBy, string seriesNumber)
-        {
-            foreach (var change in changes)
-            {
-                var logReport = new ImportExportLog()
-                {
-                    Id = Guid.NewGuid(),
-                    TableName = nameof(DynamicView.CollectionReceipt),
-                    DocumentRecordId = id,
-                    ColumnName = change.Key,
-                    Module = "Collection Receipt",
-                    OriginalValue = change.Value.OriginalValue,
-                    AdjustedValue = change.Value.NewValue,
-                    TimeStamp = DateTime.Now,
-                    UploadedBy = modifiedBy,
-                    Action = string.Empty,
-                    Executed = false,
-                    DocumentNo = seriesNumber
-                };
-                await _dbContext.AddAsync(logReport);
-            }
-        }
-
         public async Task PostAsync(CollectionReceipt collectionReceipt, List<Offsetting> offsettings, CancellationToken cancellationToken = default)
         {
             var ledgers = new List<GeneralLedgerBook>();

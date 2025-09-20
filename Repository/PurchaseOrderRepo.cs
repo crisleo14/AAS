@@ -91,28 +91,5 @@ namespace Accounting_System.Repository
                 throw new ArgumentException("Invalid id value. The id must be greater than 0.");
             }
         }
-
-        public async Task LogChangesAsync(int id, Dictionary<string, (string OriginalValue, string NewValue)> changes, string? modifiedBy, string seriesNumber)
-        {
-            foreach (var change in changes)
-            {
-                var logReport = new ImportExportLog()
-                {
-                    Id = Guid.NewGuid(),
-                    TableName = nameof(DynamicView.PurchaseOrder),
-                    DocumentRecordId = id,
-                    ColumnName = change.Key,
-                    Module = "Purchase Order",
-                    OriginalValue = change.Value.OriginalValue,
-                    AdjustedValue = change.Value.NewValue,
-                    TimeStamp = DateTime.Now,
-                    UploadedBy = modifiedBy,
-                    Action = string.Empty,
-                    Executed = false,
-                    DocumentNo = seriesNumber
-                };
-                await _dbContext.AddAsync(logReport);
-            }
-        }
     }
 }

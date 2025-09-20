@@ -41,50 +41,5 @@ namespace Accounting_System.Repository
                 return $"JV{1.ToString("D10")}";
             }
         }
-
-        public async Task LogChangesAsync(int id, Dictionary<string, (string OriginalValue, string NewValue)> changes, string? modifiedBy, string seriesNumber)
-        {
-            foreach (var change in changes)
-            {
-                var logReport = new ImportExportLog()
-                {
-                    Id = Guid.NewGuid(),
-                    TableName = "JournalVoucherHeader",
-                    DocumentRecordId = id,
-                    ColumnName = change.Key,
-                    Module = "Journal Voucher Header",
-                    OriginalValue = change.Value.OriginalValue,
-                    AdjustedValue = change.Value.NewValue,
-                    TimeStamp = DateTime.Now,
-                    UploadedBy = modifiedBy,
-                    Action = string.Empty,
-                    Executed = false
-                };
-                await _dbContext.AddAsync(logReport);
-            }
-        }
-
-        public async Task LogChangesForJVDAsync(int? id, Dictionary<string, (string OriginalValue, string NewValue)> changes, string? modifiedBy, string seriesNumber)
-        {
-            foreach (var change in changes)
-            {
-                var logReport = new ImportExportLog()
-                {
-                    Id = Guid.NewGuid(),
-                    TableName = "JournalVoucherDetails",
-                    DocumentRecordId = id!.Value,
-                    ColumnName = change.Key,
-                    Module = "Journal Voucher Details",
-                    OriginalValue = change.Value.OriginalValue,
-                    AdjustedValue = change.Value.NewValue,
-                    TimeStamp = DateTime.Now,
-                    UploadedBy = modifiedBy,
-                    Action = string.Empty,
-                    Executed = false,
-                    DocumentNo = seriesNumber
-                };
-                await _dbContext.AddAsync(logReport);
-            }
-        }
     }
 }

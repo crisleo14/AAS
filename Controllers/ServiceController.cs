@@ -24,14 +24,9 @@ namespace Accounting_System.Controllers
             _serviceRepo = serviceRepo;
         }
 
-        public async Task<IActionResult> Index(string? view, CancellationToken cancellationToken)
+        public async Task<IActionResult> Index(CancellationToken cancellationToken)
         {
             var data = await _dbContext.Services.ToListAsync(cancellationToken);
-
-            if (view == nameof(DynamicView.Service))
-            {
-                return View("ImportExportIndex", data);
-            }
 
             return View(data);
         }
@@ -243,95 +238,5 @@ namespace Accounting_System.Controllers
         {
             return _dbContext.Services != null! && _dbContext.Services.Any(e => e.ServiceId == id);
         }
-
-        //Upload as .xlsx file.(Import)
-        #region -- import xlsx record --
-
-        [HttpPost]
-        public async Task<IActionResult> Import(IFormFile file, CancellationToken cancellationToken)
-        {
-            if (file.Length == 0)
-            {
-                return RedirectToAction(nameof(Index));
-            }
-
-            using (var stream = new MemoryStream())
-            {
-                await file.CopyToAsync(stream, cancellationToken);
-                stream.Position = 0;
-                await using var transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
-
-                try
-                {
-                    if (file.FileName.Contains(CS.Name))
-                    {
-                        using var package = new ExcelPackage(stream);
-                        var worksheet = package.Workbook.Worksheets.FirstOrDefault();
-                        if (worksheet == null)
-                        {
-                            TempData["error"] = "The Excel file contains no worksheets.";
-                            return RedirectToAction(nameof(Index), new { view = DynamicView.Service });
-                        }
-                        if (worksheet.ToString() != "Services")
-                        {
-                            TempData["error"] = "The Excel file is not related to service master file.";
-                            return RedirectToAction(nameof(Index), new { view = DynamicView.Service });
-                        }
-
-                        var rowCount = worksheet.Dimension.Rows;
-                        var servicesList = await _dbContext
-                            .Services
-                            .ToListAsync(cancellationToken);
-
-                        for (int row = 2; row <= rowCount; row++)  // Assuming the first row is the header
-                        {
-                            var services = new Services
-                            {
-                                ServiceNo = await _serviceRepo.GetLastNumber(cancellationToken),
-                                CurrentAndPreviousTitle = worksheet.Cells[row, 1].Text,
-                                UnearnedTitle = worksheet.Cells[row, 2].Text,
-                                Name = worksheet.Cells[row, 3].Text,
-                                Percent = int.TryParse(worksheet.Cells[row, 4].Text, out int percent) ? percent : 0,
-                                CreatedBy = worksheet.Cells[row, 5].Text,
-                                CreatedDate = DateTime.TryParse(worksheet.Cells[row, 6].Text, out DateTime createdDate) ? createdDate : default,
-                                CurrentAndPreviousNo = worksheet.Cells[row, 7].Text,
-                                UnearnedNo = worksheet.Cells[row, 8].Text,
-                                OriginalServiceId = int.TryParse(worksheet.Cells[row, 9].Text, out int originalServiceId) ? originalServiceId : 0,
-                            };
-
-                            if (servicesList.Any(s => s.OriginalServiceId == services.OriginalServiceId))
-                            {
-                                continue;
-                            }
-
-                            await _dbContext.Services.AddAsync(services, cancellationToken);
-                            await _dbContext.SaveChangesAsync(cancellationToken);
-                        }
-                        await transaction.CommitAsync(cancellationToken);
-                        TempData["success"] = "Uploading Success!";
-                    }
-                    else
-                    {
-                        TempData["warning"] = "The Uploaded Excel file is not related to AAS.";
-                    }
-                }
-                catch (OperationCanceledException oce)
-                {
-                    await transaction.RollbackAsync(cancellationToken);
-                    TempData["error"] = oce.Message;
-                    return RedirectToAction(nameof(Index), new { view = DynamicView.Service });
-                }
-                catch (Exception ex)
-                {
-                    await transaction.RollbackAsync(cancellationToken);
-                    TempData["error"] = ex.Message;
-                    return RedirectToAction(nameof(Index), new { view = DynamicView.Service });
-                }
-            }
-
-            return RedirectToAction(nameof(Index), new { view = DynamicView.Service });
-        }
-
-        #endregion -- import xlsx record --
     }
 }

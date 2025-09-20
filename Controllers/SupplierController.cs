@@ -28,14 +28,9 @@ namespace Accounting_System.Controllers
             _webHostEnvironment = webHostEnvironment;
         }
 
-        public async Task<IActionResult> Index(string? view, CancellationToken cancellationToken)
+        public async Task<IActionResult> Index(CancellationToken cancellationToken)
         {
             var data = await _context.Suppliers.ToListAsync(cancellationToken);
-
-            if (view == nameof(DynamicView.Supplier))
-            {
-                return View("ImportExportIndex", data);
-            }
 
             return View(data);
         }
@@ -377,109 +372,5 @@ namespace Accounting_System.Controllers
         {
             return _context.Suppliers != null! && _context.Suppliers.Any(e => e.SupplierId == id);
         }
-
-        //Upload as .xlsx file.(Import)
-
-        #region -- import xlsx record --
-
-        [HttpPost]
-        [SuppressMessage("ReSharper.DPA", "DPA0000: DPA issues")]
-        public async Task<IActionResult> Import(IFormFile file, CancellationToken cancellationToken)
-        {
-            if (file.Length == 0)
-            {
-                return RedirectToAction(nameof(Index));
-            }
-
-            using (var stream = new MemoryStream())
-            {
-                await file.CopyToAsync(stream, cancellationToken);
-                stream.Position = 0;
-                await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
-
-                try
-                {
-                    if (file.FileName.Contains(CS.Name))
-                    {
-                        using var package = new ExcelPackage(stream);
-                        var worksheet = package.Workbook.Worksheets.FirstOrDefault();
-                        if (worksheet == null)
-                        {
-                            TempData["error"] = "The Excel file contains no worksheets.";
-                            return RedirectToAction(nameof(Index), new { view = DynamicView.Supplier });
-                        }
-                        if (worksheet.ToString() != nameof(DynamicView.Supplier))
-                        {
-                            TempData["error"] = "The Excel file is not related to supplier master file.";
-                            return RedirectToAction(nameof(Index), new { view = DynamicView.Supplier });
-                        }
-
-                        var rowCount = worksheet.Dimension.Rows;
-                        var supplierList = await _context
-                            .Suppliers
-                            .ToListAsync(cancellationToken);
-
-                        for (int row = 2; row <= rowCount; row++)  // Assuming the first row is the header
-                        {
-                            var supplier = new Supplier
-                            {
-                                Number = await _supplierRepo.GetLastNumber(cancellationToken),
-                                SupplierName = worksheet.Cells[row, 1].Text,
-                                SupplierAddress = worksheet.Cells[row, 2].Text,
-                                ZipCode = worksheet.Cells[row, 3].Text,
-                                SupplierTin = worksheet.Cells[row, 4].Text,
-                                SupplierTerms = worksheet.Cells[row, 5].Text,
-                                VatType = worksheet.Cells[row, 6].Text,
-                                TaxType = worksheet.Cells[row, 7].Text,
-                                ProofOfRegistrationFilePath = worksheet.Cells[row, 8].Text,
-                                ReasonOfExemption = worksheet.Cells[row, 9].Text,
-                                Validity = worksheet.Cells[row, 10].Text,
-                                ValidityDate = DateTime.TryParse(worksheet.Cells[row, 11].Text, out DateTime validityDate) ? validityDate : default,
-                                ProofOfExemptionFilePath = worksheet.Cells[row, 12].Text,
-                                CreatedBy = worksheet.Cells[row, 13].Text,
-                                CreatedDate = DateTime.TryParse(worksheet.Cells[row, 14].Text, out DateTime createdDate) ? createdDate : default,
-                                Branch = worksheet.Cells[row, 15].Text,
-                                Category = worksheet.Cells[row, 16].Text,
-                                TradeName = worksheet.Cells[row, 17].Text,
-                                DefaultExpenseNumber = worksheet.Cells[row, 18].Text,
-                                WithholdingTaxPercent = int.TryParse(worksheet.Cells[row, 19].Text, out int withholdingTaxPercent) ? withholdingTaxPercent : 0,
-                                WithholdingTaxtitle = worksheet.Cells[row, 20].Text,
-                                OriginalSupplierId = int.TryParse(worksheet.Cells[row, 21].Text, out int originalSupplierId) ? originalSupplierId : 0,
-                            };
-
-                            if (supplierList.Any(supp => supp.OriginalSupplierId == supplier.OriginalSupplierId))
-                            {
-                                continue;
-                            }
-
-                            await _context.Suppliers.AddAsync(supplier, cancellationToken);
-                            await _context.SaveChangesAsync(cancellationToken);
-                        }
-                        await transaction.CommitAsync(cancellationToken);
-                        TempData["success"] = "Uploading Success!";
-                    }
-                    else
-                    {
-                        TempData["warning"] = "The Uploaded Excel file is not related to AAS.";
-                    }
-                }
-                catch (OperationCanceledException oce)
-                {
-                    await transaction.RollbackAsync(cancellationToken);
-                    TempData["error"] = oce.Message;
-                    return RedirectToAction(nameof(Index), new { view = DynamicView.Supplier });
-                }
-                catch (Exception ex)
-                {
-                    await transaction.RollbackAsync(cancellationToken);
-                    TempData["error"] = ex.Message;
-                    return RedirectToAction(nameof(Index), new { view = DynamicView.Supplier });
-                }
-            }
-
-            return RedirectToAction(nameof(Index), new { view = DynamicView.Supplier });
-        }
-
-        #endregion -- import xlsx record --
     }
 }
