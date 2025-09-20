@@ -1151,36 +1151,6 @@ namespace Accounting_System.Controllers
 
                         #endregion --General Ledger Book Recording(CV)--
 
-                        #region --Disbursement Book Recording(CV)--
-
-                        var disbursement = new List<DisbursementBook>();
-                        foreach (var details in modelDetails)
-                        {
-                            var bank = _dbContext.BankAccounts.FirstOrDefault(model => model.BankAccountId == modelHeader.BankId);
-                            disbursement.Add(
-                                    new DisbursementBook
-                                    {
-                                        Date = modelHeader.Date,
-                                        CVNo = modelHeader.CheckVoucherHeaderNo!,
-                                        Payee = modelHeader.Payee != null ? modelHeader.Payee! : supplierName!,
-                                        Amount = modelHeader.Total,
-                                        Particulars = modelHeader.Particulars!,
-                                        Bank = bank != null ? bank.Bank : "N/A",
-                                        CheckNo = !string.IsNullOrEmpty(modelHeader.CheckNo) ? modelHeader.CheckNo : "N/A",
-                                        CheckDate = modelHeader.CheckDate != null ? modelHeader.CheckDate?.ToString("MM/dd/yyyy")! : "N/A",
-                                        ChartOfAccount = details.AccountNo + " " + details.AccountName,
-                                        Debit = details.Debit,
-                                        Credit = details.Credit,
-                                        CreatedBy = modelHeader.CreatedBy,
-                                        CreatedDate = modelHeader.CreatedDate
-                                    }
-                                );
-                        }
-
-                        await _dbContext.DisbursementBooks.AddRangeAsync(disbursement, cancellationToken);
-
-                        #endregion --Disbursement Book Recording(CV)--
-
                         #region --Audit Trail Recording
 
                         if (modelHeader.OriginalSeriesNumber.IsNullOrEmpty() && modelHeader.OriginalDocumentId == 0)
