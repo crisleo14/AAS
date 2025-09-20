@@ -717,6 +717,8 @@ namespace Accounting_System.Controllers
 
                     for (int i = 0; i < viewModel.AccountTitle.Length; i++)
                     {
+                        var getOriginalDocumentId =
+                            existingDetailsModel.FirstOrDefault(x => x.AccountName == viewModel.AccountTitle[i]);
                         details.Add(new CheckVoucherDetail
                         {
                             AccountNo = viewModel.AccountNumber[i],
@@ -726,7 +728,8 @@ namespace Accounting_System.Controllers
                             Debit = viewModel.Debit[i],
                             Credit = viewModel.Credit[i],
                             Amount = 0,
-                            SupplierId = viewModel.AccountTitle[i] != "Cash in Bank" ? viewModel.MultipleSupplierId : null
+                            SupplierId = viewModel.AccountTitle[i] != "Cash in Bank" ? viewModel.MultipleSupplierId : null,
+                            OriginalDocumentId = getOriginalDocumentId?.OriginalDocumentId
                         });
                     }
 
