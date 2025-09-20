@@ -799,6 +799,8 @@ namespace Accounting_System.Controllers
                         var parts = accountEntry.AccountTitle.Split(' ', 2); // Split into at most two parts
                         var accountNo = parts[0];
                         var accountName = parts[1];
+                        var getOriginalDocumentId =
+                            existingDetailsModel.FirstOrDefault(x => x.AccountName == accountName);
 
                         checkVoucherDetails.Add(new CheckVoucherDetail
                         {
@@ -811,6 +813,7 @@ namespace Accounting_System.Controllers
                             IsVatable = accountEntry.Vatable,
                             EwtPercent = accountEntry.TaxPercentage,
                             IsUserSelected = true,
+                            OriginalDocumentId = getOriginalDocumentId?.OriginalDocumentId
                         });
 
                         if (accountEntry.Vatable)
@@ -843,6 +846,8 @@ namespace Accounting_System.Controllers
 
                     if (vatAmount > 0)
                     {
+                        var getOriginalDocumentId =
+                            existingDetailsModel.FirstOrDefault(x => x.AccountName == vatInputTitle.AccountName);
                         checkVoucherDetails.Add(new CheckVoucherDetail
                         {
                             AccountNo = vatInputTitle.AccountNumber,
@@ -851,11 +856,14 @@ namespace Accounting_System.Controllers
                             CheckVoucherHeaderId = existingModel.CheckVoucherHeaderId,
                             Debit = vatAmount,
                             Credit = 0,
+                            OriginalDocumentId = getOriginalDocumentId?.OriginalDocumentId
                         });
                     }
 
                     if (apNontradeAmount > 0)
                     {
+                        var getOriginalDocumentId =
+                            existingDetailsModel.FirstOrDefault(x => x.AccountName == apNonTradeTitle.AccountName);
                         checkVoucherDetails.Add(new CheckVoucherDetail
                         {
                             AccountNo = apNonTradeTitle.AccountNumber,
@@ -864,12 +872,15 @@ namespace Accounting_System.Controllers
                             CheckVoucherHeaderId = existingModel.CheckVoucherHeaderId,
                             Debit = 0,
                             Credit = apNontradeAmount,
-                            SupplierId = existingModel.SupplierId
+                            SupplierId = existingModel.SupplierId,
+                            OriginalDocumentId = getOriginalDocumentId?.OriginalDocumentId
                         });
                     }
 
                     if (ewtOnePercentAmount > 0)
                     {
+                        var getOriginalDocumentId =
+                            existingDetailsModel.FirstOrDefault(x => x.AccountName == ewtOnePercent.AccountName);
                         checkVoucherDetails.Add(new CheckVoucherDetail
                         {
                             AccountNo = ewtOnePercent.AccountNumber,
@@ -882,12 +893,15 @@ namespace Accounting_System.Controllers
                             SupplierId = await _dbContext.Suppliers
                                 .Where(s => s.SupplierName.Contains("BUREAU OF INTERNAL REVENUE"))
                                 .Select(s => s.SupplierId)
-                                .FirstOrDefaultAsync(cancellationToken: cancellationToken)
+                                .FirstOrDefaultAsync(cancellationToken: cancellationToken),
+                            OriginalDocumentId = getOriginalDocumentId?.OriginalDocumentId
                         });
                     }
 
                     if (ewtTwoPercentAmount > 0)
                     {
+                        var getOriginalDocumentId =
+                            existingDetailsModel.FirstOrDefault(x => x.AccountName == ewtTwoPercent.AccountName);
                         checkVoucherDetails.Add(new CheckVoucherDetail
                         {
                             AccountNo = ewtTwoPercent.AccountNumber,
@@ -900,12 +914,15 @@ namespace Accounting_System.Controllers
                             SupplierId = await _dbContext.Suppliers
                                 .Where(s => s.SupplierName.Contains("BUREAU OF INTERNAL REVENUE"))
                                 .Select(s => s.SupplierId)
-                                .FirstOrDefaultAsync(cancellationToken: cancellationToken)
+                                .FirstOrDefaultAsync(cancellationToken: cancellationToken),
+                            OriginalDocumentId = getOriginalDocumentId?.OriginalDocumentId
                         });
                     }
 
                     if (ewtFivePercentAmount > 0)
                     {
+                        var getOriginalDocumentId =
+                            existingDetailsModel.FirstOrDefault(x => x.AccountName == ewtFivePercent.AccountName);
                         checkVoucherDetails.Add(new CheckVoucherDetail
                         {
                             AccountNo = ewtFivePercent.AccountNumber,
@@ -918,12 +935,15 @@ namespace Accounting_System.Controllers
                             SupplierId = await _dbContext.Suppliers
                                 .Where(s => s.SupplierName.Contains("BUREAU OF INTERNAL REVENUE"))
                                 .Select(s => s.SupplierId)
-                                .FirstOrDefaultAsync(cancellationToken: cancellationToken)
+                                .FirstOrDefaultAsync(cancellationToken: cancellationToken),
+                            OriginalDocumentId = getOriginalDocumentId?.OriginalDocumentId
                         });
                     }
 
                     if (ewtTenPercentAmount > 0)
                     {
+                        var getOriginalDocumentId =
+                            existingDetailsModel.FirstOrDefault(x => x.AccountName == ewtTenPercent.AccountName);
                         checkVoucherDetails.Add(new CheckVoucherDetail
                         {
                             AccountNo = ewtTenPercent.AccountNumber,
@@ -936,7 +956,8 @@ namespace Accounting_System.Controllers
                             SupplierId = await _dbContext.Suppliers
                                 .Where(s => s.SupplierName.Contains("BUREAU OF INTERNAL REVENUE"))
                                 .Select(s => s.SupplierId)
-                                .FirstOrDefaultAsync(cancellationToken: cancellationToken)
+                                .FirstOrDefaultAsync(cancellationToken: cancellationToken),
+                            OriginalDocumentId = getOriginalDocumentId?.OriginalDocumentId
                         });
                     }
 
