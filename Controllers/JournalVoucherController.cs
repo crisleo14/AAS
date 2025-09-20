@@ -682,23 +682,27 @@ namespace Accounting_System.Controllers
                     // Add or update records
                     for (int i = 0; i < viewModel.AccountTitle?.Length; i++)
                     {
+                        var getAccountName = await _dbContext.ChartOfAccounts.FirstOrDefaultAsync(x => x.AccountNumber == viewModel.AccountNumber![i], cancellationToken);
 
-                        if (accountTitleDict.TryGetValue(viewModel.AccountNumber?[i]!, out var ids))
+                        if (accountTitleDict.TryGetValue(viewModel.AccountNumber?[i], out var ids))
                         {
                             // Update the first matching record and remove it from the list
                             var detailsId = ids.First();
                             ids.RemoveAt(0);
                             var details = existingModel.Details.First(o => o.JournalVoucherDetailId == detailsId);
+                            var getOriginalDocumentId =
+                                existingModel.Details.FirstOrDefault(x => x.AccountNo == details.AccountNo);
 
                             var acctNo = await _dbContext.ChartOfAccounts
-                                .FirstOrDefaultAsync(x => x.AccountName == viewModel.AccountNumber![i], cancellationToken: cancellationToken);
+                                .FirstOrDefaultAsync(x => x.AccountNumber == viewModel.AccountNumber![i], cancellationToken: cancellationToken);
 
                             details.AccountNo = acctNo!.AccountNumber;
-                            details.AccountName = viewModel.AccountTitle[i];
+                            details.AccountName = getAccountName.AccountName;
                             details.Debit = viewModel.Debit[i];
                             details.Credit = viewModel.Credit[i];
                             details.TransactionNo = existingModel.JournalVoucherHeaderNo!;
                             details.JournalVoucherHeaderId = existingModel.JournalVoucherHeaderId;
+                            details.OriginalDocumentId = getOriginalDocumentId?.OriginalDocumentId;
 
                             if (ids.Count == 0)
                             {
@@ -707,15 +711,17 @@ namespace Accounting_System.Controllers
                         }
                         else
                         {
+                            var getOriginalDocumentId = existingModel.Details.ToArray();
                             // Add new record
                             var newDetails = new JournalVoucherDetail
                             {
                                 AccountNo = viewModel.AccountNumber![i],
-                                AccountName = viewModel.AccountTitle[i],
+                                AccountName = getAccountName.AccountName,
                                 Debit = viewModel.Debit[i],
                                 Credit = viewModel.Credit[i],
                                 TransactionNo = existingModel.JournalVoucherHeaderNo!,
-                                JournalVoucherHeaderId = existingModel.JournalVoucherHeaderId
+                                JournalVoucherHeaderId = existingModel.JournalVoucherHeaderId,
+                                OriginalDocumentId = getOriginalDocumentId[i].OriginalDocumentId
                             };
                             await _dbContext.JournalVoucherDetails.AddAsync(newDetails, cancellationToken);
                         }
