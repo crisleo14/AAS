@@ -44,7 +44,7 @@ namespace Accounting_System.Models.AccountsReceivable
         public string Description { get; set; }
 
         [Display(Name = "Price Adjustment")]
-        [DisplayFormat(DataFormatString = "{0:N2}", ApplyFormatInEditMode = true)]
+        [DisplayFormat(DataFormatString = "{0:N4}", ApplyFormatInEditMode = true)]
         [Column(TypeName = "numeric(18,4)")]
         public decimal? AdjustedPrice { get; set; }
 
