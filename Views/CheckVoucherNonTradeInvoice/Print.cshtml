@@ -6,7 +6,7 @@
 
 @{
     ViewData["Title"] = "Print Check Voucher";
-    var supplierId = Model.Header!.SupplierId != null ? Model.Header.SupplierId : Model.Details!.Where(d => d.SupplierId != null).Select(d => d.SupplierId).FirstOrDefault() ?? 0;
+    var supplier = Model.Supplier ?? Model.Header!.Supplier!;
 }
 
 <br />
@@ -43,28 +43,12 @@
         <tbody>
         <tr>
             <td style="width:10%; padding-left:20px;">Name :</td>
-            @if (Model.Header.SupplierId != null)
-            {
-                <td>@Html.DisplayFor(model => model.Header!.Supplier!.SupplierName)</td>
-            }
-            else
-            {
-                var supplierName = Model.Details!.FirstOrDefault(d => d.SupplierId != null)?.Supplier?.SupplierName;
-                <td>@supplierName</td>
-            }
+            <td>@supplier.SupplierName</td>
             <td style="width:50%;" colspan="2" class="text-nowrap">Other References</td>
         </tr>
         <tr>
             <td style="padding-left:20px;">Address :</td>
-            @if (Model.Header.SupplierId != null)
-            {
-                <td>@Html.DisplayFor(model => model.Header!.Supplier!.SupplierAddress)</td>
-            }
-            else
-            {
-                var supplierAddress = Model.Details!.FirstOrDefault(d => d.SupplierId != null)?.Supplier?.SupplierAddress;
-                <td>@supplierAddress</td>
-            }
+            <td>@supplier.SupplierAddress</td>
             <td style="width:5%;">PO # :</td>
             <td>
                 @if (Model.Header.PONo != null)
@@ -85,15 +69,7 @@
         </tr>
         <tr>
             <td style="padding-left:20px;">TIN # :</td>
-            @if (Model.Header.SupplierId != null)
-            {
-                <td>@Html.DisplayFor(model => model.Header!.Supplier!.SupplierTin)</td>
-            }
-            else
-            {
-                var supplierTinNo = Model.Details!.FirstOrDefault(d => d.SupplierId != null)?.Supplier?.SupplierTin;
-                <td>@supplierTinNo</td>
-            }
+            <td>@supplier.SupplierTin</td>
             <td>SI # :</td>
             <td>
                 @for (int i = 0; i < Model.Header.SINo!.Length; i++)
@@ -323,7 +299,7 @@ else
         else
         {
             <div class="col-6 col-md-3">
-                <a asp-controller="CheckVoucherNonTradeInvoice" asp-action="Printed" asp-route-id="@Model.Header.CheckVoucherHeaderId" asp-route-supplierId="@supplierId" onclick="window.print()" class="btn btn-primary form-control buttons" id="otherButton">Print</a>
+                <a asp-controller="CheckVoucherNonTradeInvoice" asp-action="Printed" asp-route-id="@Model.Header.CheckVoucherHeaderId" asp-route-supplierId="@supplier.SupplierId" onclick="window.print()" class="btn btn-primary form-control buttons" id="otherButton">Print</a>
             </div>
         }
     }
@@ -354,7 +330,7 @@ else
                 if (result.isConfirmed) {
                     // Properly encode the parameters to prevent any issues with special characters
                     
-                    window.location.href = `@Url.Action("Post", "CheckVoucherNonTradeInvoice")?id=${encodeURIComponent(id)}&supplierId=${encodeURIComponent(@supplierId)}`;
+                    window.location.href = `@Url.Action("Post", "CheckVoucherNonTradeInvoice")?id=${encodeURIComponent(id)}&supplierId=${encodeURIComponent(@supplier.SupplierId)}`;
                 }
             })
         }

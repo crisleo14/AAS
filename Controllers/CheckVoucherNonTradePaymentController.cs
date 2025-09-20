@@ -122,6 +122,7 @@ namespace Accounting_System.Controllers
             }
 
             var header = await _dbContext.CheckVoucherHeaders
+                .Include(x => x.Supplier)
                 .FirstOrDefaultAsync(cvh => cvh.CheckVoucherHeaderId == id.Value, cancellationToken);
 
             if (header == null)
