@@ -661,7 +661,7 @@ namespace Accounting_System.Controllers
                             TransactionNo = existingHeaderModel!.CheckVoucherHeaderNo!,
                             CheckVoucherHeaderId = viewModel.CVId,
                             SupplierId = i == 0 ? viewModel.SupplierId : null,
-                            OriginalDocumentId = getOriginalDocumentId!.OriginalDocumentId
+                            OriginalDocumentId = getOriginalDocumentId?.OriginalDocumentId
                         });
                     }
 

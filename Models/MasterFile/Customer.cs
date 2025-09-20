@@ -31,7 +31,7 @@ namespace Accounting_System.Models
         [Required]
         [Display(Name = "Business Style")]
         [StringLength(100)]
-        public string BusinessStyle { get; set; }
+        public string? BusinessStyle { get; set; }
 
         [Required]
         [Display(Name = "Payment Terms")]
