@@ -51,8 +51,8 @@
                             </tr>
                             <tr>
                                 <th><input type="checkbox" id="selectAll" onclick="toggleSelectAll(this)"></th>
+                                <th>PO No's</th>
                                 <th>RR No's</th>
-                                <th>Payment</th>
                                 <th class="text-end">Amount</th>
                                 <th class="text-end">Amount Paid</th>
                                 <th class="text-end">Balance</th>
@@ -248,69 +248,96 @@
             });
         });
 
-        displayRecords(@Html.Raw(Json.Serialize(Model.POSeries)), @Html.Raw(Json.Serialize(Model.CVId)));
+        let cvId = @Html.Raw(Json.Serialize(Model.CVId));
+
+        $(document).ready(function () {
+            let poNumber = $(".GetRRList").val();
+            displayRecords(poNumber, cvId)
+        });
 
         $(".GetRRList").change(function () {
             let poNumber = $(this).val(); // Get all selected POIds
-            displayRecords(poNumber)
+            displayRecords(poNumber, cvId);
         });
 
         function displayRecords(poNumber, cvId) {
             $.ajax({
                 url: "@Url.Action("GetRRs", "CheckVoucherTrade")",
                 method: "GET",
-                data: { poNumber: poNumber, cvId : cvId }, // Pass PO numbers to controller
+                data: { poNumber: poNumber, cvId: cvId  }, // Pass PO numbers to controller
                 traditional: true, // Ensure jQuery sends the array properly
                 success: function (data) {
                     const tbody = $('.rrAmount');
                     let totalGross = 0;
                     let totalAmountPaid = 0;
                     let totalBalance = 0;
-                    const modelRRs = new Map(@Html.Raw(Json.Serialize(Model.RRs.Select(r => new { r.Id, r.Amount})))
-                        .map(r => [r.id, r.amount]));
+                    let subTotalGross = 0;
 
                     tbody.empty();
 
-                    if (data){
-                        data.forEach((rr) => {
-                            let balance = parseNumber(rr.netOfEwtAmount) - parseNumber(rr.amountPaid);
+                    if (data) {
+                        let currentPO = null;
+                        const modelRRs = new Map(
+                            @Html.Raw(Json.Serialize(Model.RRs.Select(r => new { r.Id, r.Amount })))
+                                .map(r => [r.id, r.amount])
+                        );
 
+                        data.forEach((rr, index) => {
+                            currentPO = rr.purchaseOrderNo;
                             const isChecked = modelRRs.has(rr.id) ? 'checked' : '';
+                            let display = modelRRs.has(rr.id) ? '' : 'display: none';
+                            let inputamountClass = modelRRs.has(rr.id) ? 'inputAmount' : '';
+                            const amountPaid = modelRRs.get(rr.id);
                             const tr = $(`
-                                        <tr>
-                                            <td><input type="checkbox" value="${rr.id}" class="selectCheckbox" ${isChecked}></td>
-                                            <td>${rr.receivingReportNo}</td>
-                                            <td><input type="text" class="paymentAmount" readonly style="display: none"></td>
-                                            <td class="text-end">${formatNumber(rr.netOfEwtAmount)}</td>
-                                            <td class="text-end">${formatNumber(rr.amountPaid)}</td>
-                                            <td class="text-end balance">${formatNumber(balance)}</td>
-                                        </tr>
-                                    `);
+                                <tr data-po="${rr.purchaseOrderNo}">
+                                    <td><input type="checkbox" value="${rr.id}" class="selectCheckbox" ${isChecked}></td>
+                                    <td>${rr.purchaseOrderNo}</td>
+                                    <td>${rr.receivingReportNo}</td>
+                                    <td class="text-end grossAmount">${formatNumberToFour(rr.netOfEwtAmount)}</td>
+                                    <td class="text-end"><input type="text" class="paymentAmount text-end ${inputamountClass}" readonly style="${display}" value="${amountPaid}"></td>
+                                    <td class="text-end balance">${formatNumberToFour(parseNumber(rr.netOfEwtAmount) - parseNumber(rr.amountPaid))}</td>
+                                </tr>
+                            `);
+
+                            subTotalGross += parseNumber(rr.netOfEwtAmount);
+                            totalGross += parseNumber(rr.netOfEwtAmount);
+
                             tbody.append(tr);
 
-                            totalGross += parseNumber(rr.netOfEwtAmount);
-                            totalAmountPaid += parseNumber(rr.amountPaid);
-                            totalBalance += balance;
+                            // Append subtotal ONLY when last row of this PO group
+                            if (index === data.length - 1 || data[index + 1].purchaseOrderNo !== currentPO) {
+                                const subTotal = $(`
+                                <tr class="fw-bold bg-light subtotalRow" data-po="${currentPO}">
+                                    <td colspan="2"></td>
+                                    <td class="fw-bold text-end">Subtotal (${rr.purchaseOrderNo}):</td>
+                                    <td class="text-end subTotalGross">${formatNumber(subTotalGross)}</td>
+                                    <td class="text-end subTotalAmountPaid">0.00</td>
+                                    <td class="text-end subTotalBalance">0.00</td>
+                                </tr>
+                            `);
+                                tbody.append(subTotal);
+                                subTotalGross = 0;
+                            }
                         });
+                        reindexSelected();
                     }
+
 
                     // Append Grand Total Rows
                     const totalRow = $(`
-                <tr style="border-bottom:double;" class="sticky-lg-bottom">
-                    <td colspan="7" class="pt-1"></td>
-                </tr>
-                <tr class="sticky-bottom bg-white">
-                    <td colspan="2"></td>
-                    <td class="fw-bold text-end p-2">Grand Total:</td>
-                    <td class="text-end" id="grandTotalRRAmount">${formatNumber(totalGross)}</td>
-                    <td class="text-end" id="grandTotalNetAmount">${formatNumber(totalAmountPaid)}</td>
-                    <td class="text-end" id="grandTotalNetOfEWT">${formatNumber(totalBalance)}</td>
-                </tr>
-            `);
+                        <tr style="border-bottom:double;" class="sticky-lg-bottom">
+                            <td colspan="7" class="pt-1"></td>
+                        </tr>
+                        <tr class="sticky-bottom bg-white">
+                            <td colspan="2"></td>
+                            <td class="fw-bold text-end p-2">Grand Total:</td>
+                            <td class="text-end grandTotalGross" id="grandTotalRRAmount">${formatNumber(totalGross)}</td>
+                            <td class="text-end grandTotalAmountPaid" id="grandTotalNetAmount">0.00</td>
+                            <td class="text-end grandTotalBalance" id="grandTotalNetOfEWT">${formatNumber(totalBalance)}</td>
+                        </tr>
+                    `);
                     tbody.append(totalRow);
-
-                    // Ensure checkbox state is processed AFTER records are loaded
-                    initializeCheckedCheckboxes();
+                    updateAmounts();
                 },
                 error: function (xhr, status, error) {
                     console.error('Error fetching RRs:', error);
@@ -318,109 +345,100 @@
             });
         }
 
-        let selectedRecords = []; // Store selected records
-        let allRecordsSelected = false;  // Flag to check if "Select All" is toggled
+        let selectedRecords = new Set(); // Store selected records
+        let allRecordsSelected = false;  // Flag to check if "Select All" is toggled across all pages
 
         function toggleSelectAll(selectAllCheckbox) {
             const isChecked = selectAllCheckbox.checked;
-            selectedRecords = isChecked ? [] : []; // Reset selected records
 
-            $('.selectCheckbox').each(function () {
-                const checkbox = $(this);
-                const rrId = checkbox.val(); // Get checkbox value
-
-                if (isChecked) {
-                    if (!selectedRecords.includes(rrId)) {
-                        selectedRecords.push(rrId); // Add value
-                    }
-                    checkbox.prop('checked', true);
-                } else {
-                    selectedRecords = []; // Reset when deselecting all
-                    checkbox.prop('checked', false);
+            $(".selectCheckbox").each(function () {
+                if (isChecked && !this.checked) {
+                    // Check unchecked ones only
+                    $(this).prop("checked", true).trigger("change");
+                } else if (!isChecked && this.checked) {
+                    // Uncheck checked ones only
+                    $(this).prop("checked", false).trigger("change");
                 }
-
-                handleCheckboxChange(checkbox);
             });
 
             allRecordsSelected = isChecked;
         }
 
-        // Event listener to show/hide input field on checkbox toggle
-        $(document).ready(function () {
-            checkBox();
-            initializeCheckedCheckboxes(); // Call this on page load
-        });
+        $(document).on('change', '.selectCheckbox', function () {
+            const row = $(this).closest('tr');
+            const inputField = row.find('.paymentAmount');
+            const balance = parseNumber(row.find('.balance').text().trim());
+            const grossAmount = parseNumber(row.find('.grossAmount').text());
 
-        function checkBox() {
-            $(document).on('change', '.selectCheckbox', function () {
-                handleCheckboxChange($(this));
-            });
-        }
-
-        function initializeCheckedCheckboxes() {
-            $('.selectCheckbox:checked').each(function () {
-                handleCheckboxChange($(this));
-            });
-        }
-
-        function handleCheckboxChange(checkboxElement) {
-            const $checkbox = $(checkboxElement);
-            const $row = $checkbox.closest('tr');
-            const $inputField = $row.find('.paymentAmount');
-            const rrId = $checkbox.val(); // Get checkbox value
-            const $balanceField = $row.find('.balance').text();
-
-            if ($checkbox.is(':checked')) {
-                if (!selectedRecords.includes(rrId)) {
-                    selectedRecords.push(rrId); // Add value
-                }
+            if (this.checked) {
+                selectedRecords.add(this.value);
+                inputField.val(balance).addClass("inputAmount").show();
+                row.find('.balance').text(formatNumberToFour(grossAmount - balance));
             } else {
-                selectedRecords = selectedRecords.filter(id => id !== rrId); // Remove value
+                selectedRecords.delete(this.value);
+                inputField.removeAttr("name").hide().val('');
+                row.find('.selectCheckbox').removeAttr("name");
+                row.find('.balance').text(formatNumberToFour(grossAmount));
             }
 
-            // Recalculate and update name attributes
-            selectedRecords.forEach((id, index) => {
-                const $checkboxRow = $(`.selectCheckbox[value="${id}"]`).closest('tr');
-                $checkboxRow.find('.selectCheckbox').attr("name", `RRs[${index}].Id`);
-                $checkboxRow.find('.paymentAmount').attr("name", `RRs[${index}].Amount`);
-            });
-
-            // Retrieve and apply the correct amount
-            const amountPaid = @Html.Raw(Json.Serialize(Model.RRs.ToDictionary(r => r.Id, r => r.Amount)));
-
-            if ($checkbox.is(':checked')) {
-                const amount = amountPaid[rrId]; // Get amount by ID, fallback to ''
-                if (amount === undefined){
-                    $inputField.val(parseNumber($balanceField)).addClass("inputAmount").show();
-                }else{
-                    $inputField.val(amount).addClass("inputAmount").show();
-                }
-            } else {
-                $inputField.removeAttr("name").hide().val('');
-            }
-
+            reindexSelected();
             updateAmounts();
-        }
-
-        // "Select All" using event delegation
-        $(document).on('change', '#selectAllCheckbox', function () {
-            toggleSelectAll(this);
         });
+
+        function reindexSelected() {
+            $(".selectCheckbox:checked").each(function (i) {
+                const row = $(this).closest('tr');
+                const inputField = row.find('.paymentAmount');
+
+                $(this).attr("name", `RRs[${i}].Id`);
+                inputField.attr("name", `RRs[${i}].Amount`);
+            });
+        }
 
         $(document).on('input', '.inputAmount', function () {
             updateAmounts();
         });
 
         function updateAmounts() {
-            let amountInputs = document.querySelectorAll('.inputAmount');
             let totalNetOfEWT = 0;
-            amountInputs.forEach(function (input) {
-                let rawValue = input.value;
-                let rrAmount = parseNumber(rawValue);
 
-                totalNetOfEWT += rrAmount;
+            $(".subtotalRow").each(function () {
+                const po = $(this).data("po");
+                let amountInputs = document.querySelectorAll(`tr[data-po='${po}'] .inputAmount`);
+                let subTotalAmountPaid = 0;
+
+                amountInputs.forEach(function (input) {
+                    let rawValue = input.value;
+                    let rrAmount = parseNumber(rawValue);
+
+                    totalNetOfEWT += rrAmount;
+                    subTotalAmountPaid += rrAmount;
+                });
+
+                let subTotalGross = parseNumber($(this).find(".subTotalGross").text());
+                $(this).find(".subTotalAmountPaid").text(formatNumber(subTotalAmountPaid));
+                $(this).find(".subTotalBalance").text(formatNumber(Math.abs(subTotalGross - subTotalAmountPaid)));
             });
+
             $(".totalNetOfEWT").val(formatNumber(totalNetOfEWT));
+            $(".grandTotalAmountPaid").text(formatNumber(totalNetOfEWT));
+            let grandTotalGross = parseNumber($(".grandTotalGross").text());
+            $(".grandTotalBalance").text(formatNumber(Math.abs(grandTotalGross - totalNetOfEWT)));
+
+            // Check if advances row is visible
+            var hasAdvances = $("#advancesRow").is(":visible");
+            var advancesAmount = hasAdvances ? parseNumber($("#advancesCredit").val()) : 0;
+
+            // Adjust the Cash in Bank (Credit) - deduct advances if present
+            var cashInBankAmount = totalNetOfEWT;
+            if (hasAdvances) {
+                cashInBankAmount = totalNetOfEWT - advancesAmount;
+                if (cashInBankAmount < 0) cashInBankAmount = 0; // Prevent negative values
+            }
+
+            // Update the Cash in Bank amount
+            $(".cib-credit").val(formatNumber(cashInBankAmount));
+
             updateTotalDebitAndCredit();
             validateDebitAndCredit();
         }

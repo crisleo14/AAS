@@ -452,9 +452,7 @@ namespace Accounting_System.Controllers
         public async Task<IActionResult> GetRRs(string[] poNumber, int? cvId, CancellationToken cancellationToken)
         {
             var query = _dbContext.ReceivingReports
-                .Where(rr => !rr.IsPaid
-                             && poNumber.Contains(rr.PONo)
-                             && rr.IsPosted);
+                .Where(rr => !rr.IsPaid && rr.AmountPaid == 0 && poNumber.Contains(rr.PONo) && rr.PostedBy != null);
 
             if (cvId != null)
             {
@@ -470,34 +468,40 @@ namespace Accounting_System.Controllers
             var receivingReports = await query
                 .Include(rr => rr.PurchaseOrder)
                 .ThenInclude(rr => rr!.Supplier)
-                .OrderBy(rr => rr.ReceivingReportNo)
+                .OrderBy(rr => rr.PurchaseOrder!.PurchaseOrderNo)
                 .ToListAsync(cancellationToken);
 
-            if (receivingReports.Any())
+            if (!receivingReports.Any())
             {
-                var rrList = receivingReports
-                    .Select(rr => {
-                        var netOfVatAmount = _generalRepo.ComputeNetOfVat(rr.Amount);
-
-                        var ewtAmount = rr.PurchaseOrder?.Supplier?.TaxType == CS.TaxType_WithTax
-                            ? _generalRepo.ComputeEwtAmount(netOfVatAmount, 0.01m)
-                            : 0.0000m;
-
-                        var netOfEwtAmount = rr.PurchaseOrder?.Supplier?.TaxType == CS.TaxType_WithTax
-                            ? _generalRepo.ComputeNetOfEwt(rr.Amount, ewtAmount)
-                            : netOfVatAmount;
-
-                        return new {
-                            Id = rr.ReceivingReportId,
-                            rr.ReceivingReportNo,
-                            AmountPaid = rr.AmountPaid.ToString(CS.Two_Decimal_Format),
-                            NetOfEwtAmount = netOfEwtAmount.ToString(CS.Two_Decimal_Format)
-                        };
-                    }).ToList();
-                return Json(rrList);
+                return Json(null);
             }
 
-            return Json(null);
+            var rrList = receivingReports
+                .Select(rr =>
+                {
+                    var netOfVatAmount = rr.PurchaseOrder?.Supplier?.VatType == CS.VatType_Vatable
+                        ? _generalRepo.ComputeNetOfVat(rr.Amount)
+                        : rr.Amount;
+
+                    var ewtAmount = rr.PurchaseOrder?.Supplier?.TaxType == CS.TaxType_WithTax
+                        ? _generalRepo.ComputeEwtAmount(netOfVatAmount, 0.01m)
+                        : 0.0000m;
+
+                    var netOfEwtAmount = rr.PurchaseOrder?.Supplier?.TaxType == CS.TaxType_WithTax
+                        ? _generalRepo.ComputeNetOfEwt(rr.Amount, ewtAmount)
+                        : rr.Amount;
+
+                    return new
+                    {
+                        Id = rr.ReceivingReportId,
+                        rr.ReceivingReportNo,
+                        rr.PurchaseOrder?.PurchaseOrderNo,
+                        AmountPaid = rr.AmountPaid.ToString(CS.Four_Decimal_Format),
+                        NetOfEwtAmount = netOfEwtAmount.ToString(CS.Four_Decimal_Format)
+                    };
+                }).ToList();
+
+            return Json(rrList);
         }
 
         public async Task<IActionResult> GetSupplierDetails(int? supplierId)

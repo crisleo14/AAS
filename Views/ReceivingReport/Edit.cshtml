@@ -53,12 +53,12 @@
             </div>
             <div class="form-group mb-3">
                 <label asp-for="QuantityDelivered" class="control-label">Qty Delivered</label>
-                <input asp-for="QuantityDelivered" class="form-control" disabled="@Model.IsPosted" readonly="@Model.IsPosted" />
+                <input asp-for="QuantityDelivered" class="form-control" value="@Model.QuantityDelivered" disabled="@Model.IsPosted" readonly="@Model.IsPosted" />
                 <input type="hidden" asp-for="QuantityDelivered" />
             </div>
             <div class="form-group mb-3">
                 <label asp-for="QuantityReceived" class="control-label">Qty Received</label>
-                <input asp-for="QuantityReceived" class="form-control" disabled="@Model.IsPosted" readonly="@Model.IsPosted" />
+                <input asp-for="QuantityReceived" class="form-control" value="@Model.QuantityReceived" disabled="@Model.IsPosted" readonly="@Model.IsPosted" />
                 <input type="hidden" asp-for="QuantityReceived" />
             </div>
             <div class="form-group mb-3">

@@ -166,7 +166,7 @@
         <tr>
             <td style="padding-left:20px;">Check Date:</td>
             <td>
-                @if (Model.Header.AccruedType != "Invoicing")
+                @if (Model.Header.AccruedType != "Invoicing" && Model.Header.CheckDate != DateOnly.MinValue)
                 {
                     @Model.Header.CheckDate?.ToString(CS.Date_Format)
                 }

@@ -631,7 +631,7 @@ namespace Accounting_System.Controllers
                     existingHeaderModel.PONo = invoicingVoucher.Select(i => i.PONo).FirstOrDefault();
                     existingHeaderModel.SINo = invoicingVoucher.Select(i => i.SINo).FirstOrDefault();
                     existingHeaderModel.SupplierId = viewModel.MultipleSupplierId;
-                    existingHeaderModel.Particulars = $"{viewModel.Particulars} Payment for {string.Join(",", invoicingVoucher.Select(i => i.CheckVoucherHeaderNo))}";
+                    existingHeaderModel.Particulars = $"{viewModel.Particulars}. Payment for {string.Join(",", invoicingVoucher.Select(i => i.CheckVoucherHeaderNo))}";
                     existingHeaderModel.Total = viewModel.Total;
                     // existingHeaderModel.EditedBy = _userManager.GetUserName(this.User);
                     // existingHeaderModel.EditedDate = DateTimeHelper.GetCurrentPhilippineTime();
