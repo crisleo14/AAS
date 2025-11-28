@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Diagnostics;
+using Accounting_System.Repository;
 
 namespace Accounting_System.Controllers
 {
@@ -14,16 +15,19 @@ namespace Accounting_System.Controllers
     {
         private readonly UserManager<IdentityUser> _userManager;
         private readonly ApplicationDbContext _dbContext;
+        private readonly GeneralRepo _generalRepo;
 
-        public HomeController(ApplicationDbContext dbContext, UserManager<IdentityUser> userManager)
+        public HomeController(ApplicationDbContext dbContext, UserManager<IdentityUser> userManager, GeneralRepo generalRepo)
         {
-            this._userManager = userManager;
+            _userManager = userManager;
             _dbContext = dbContext;
+            _generalRepo = generalRepo;
         }
 
         public async Task<IActionResult> Index(CancellationToken cancellationToken)
         {
-            ViewData["Id"] = _userManager.GetUserName(this.User);
+            var createdBy = await _generalRepo.GetUserFullNameAsync(User.Identity!.Name!);
+            ViewData["Id"] = createdBy;
 
             #region -- Query to count how many in each document to show in graph --
 

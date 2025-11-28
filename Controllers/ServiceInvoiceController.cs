@@ -151,6 +151,7 @@ namespace Accounting_System.Controllers
             if (ModelState.IsValid)
             {
                 await using var transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
+                var createdBy = await _generalRepo.GetUserFullNameAsync(User.Identity!.Name!);
                 try
                 {
                     #region --Validating the series
@@ -191,7 +192,7 @@ namespace Accounting_System.Controllers
 
                     model.ServiceInvoiceNo = generateSvNo;
 
-                    model.CreatedBy = _userManager.GetUserName(this.User);
+                    model.CreatedBy = createdBy;
 
                     model.ServiceNo = services.ServiceNo;
 
@@ -233,7 +234,7 @@ namespace Accounting_System.Controllers
                     if (model.OriginalSeriesNumber.IsNullOrEmpty() && model.OriginalDocumentId == 0)
                     {
                         var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
-                        AuditTrail auditTrailBook = new(model.CreatedBy!, $"Create new service invoice# {model.ServiceInvoiceNo}", "Service Invoice", ipAddress!);
+                        AuditTrail auditTrailBook = new(createdBy, $"Create new service invoice# {model.ServiceInvoiceNo}", "Service Invoice", ipAddress!);
                         await _dbContext.AddAsync(auditTrailBook, cancellationToken);
                     }
 
@@ -265,6 +266,7 @@ namespace Accounting_System.Controllers
         public async Task<IActionResult> PrintedInvoice(int id, CancellationToken cancellationToken)
         {
             var findIdOfSoa = await _serviceInvoiceRepo.FindSv(id, cancellationToken);
+            var createdBy = await _generalRepo.GetUserFullNameAsync(User.Identity!.Name!);
             if (!findIdOfSoa.IsPrinted)
             {
 
@@ -273,8 +275,7 @@ namespace Accounting_System.Controllers
                 if (findIdOfSoa.OriginalSeriesNumber.IsNullOrEmpty() && findIdOfSoa.OriginalDocumentId == 0)
                 {
                     var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
-                    var printedBy = _userManager.GetUserName(this.User);
-                    AuditTrail auditTrailBook = new(printedBy!, $"Printed original copy of sv# {findIdOfSoa.ServiceInvoiceNo}", "Service Invoice", ipAddress!);
+                    AuditTrail auditTrailBook = new(createdBy, $"Printed original copy of sv# {findIdOfSoa.ServiceInvoiceNo}", "Service Invoice", ipAddress!);
                     await _dbContext.AddAsync(auditTrailBook, cancellationToken);
                 }
 
@@ -290,13 +291,13 @@ namespace Accounting_System.Controllers
         {
             var model = await _serviceInvoiceRepo.FindSv(id, cancellationToken);
             await using var transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
-
+            var createdBy = await _generalRepo.GetUserFullNameAsync(User.Identity!.Name!);
             try
             {
                 if (!model.IsPosted)
                 {
                     model.IsPosted = true;
-                    model.PostedBy = _userManager.GetUserName(this.User);
+                    model.PostedBy = createdBy;
                     model.PostedDate = DateTime.Now;
 
                     #region --SV Date Computation--
@@ -496,7 +497,7 @@ namespace Accounting_System.Controllers
                     if (model.OriginalSeriesNumber.IsNullOrEmpty() && model.OriginalDocumentId == 0)
                     {
                         var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
-                        AuditTrail auditTrailBook = new(model.PostedBy!, $"Posted service invoice# {model.ServiceInvoiceNo}", "Service Invoice", ipAddress!);
+                        AuditTrail auditTrailBook = new(createdBy, $"Posted service invoice# {model.ServiceInvoiceNo}", "Service Invoice", ipAddress!);
                         await _dbContext.AddAsync(auditTrailBook, cancellationToken);
                     }
 
@@ -522,7 +523,7 @@ namespace Accounting_System.Controllers
         {
             var model = await _dbContext.ServiceInvoices.FirstOrDefaultAsync(x => x.ServiceInvoiceId == id, cancellationToken);
             await using var transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
-
+            var createdBy = await _generalRepo.GetUserFullNameAsync(User.Identity!.Name!);
             try
             {
                 if (model != null)
@@ -530,7 +531,7 @@ namespace Accounting_System.Controllers
                     if (!model.IsCanceled)
                     {
                         model.IsCanceled = true;
-                        model.CanceledBy = _userManager.GetUserName(this.User);
+                        model.CanceledBy = createdBy;
                         model.CanceledDate = DateTime.Now;
                         model.CancellationRemarks = cancellationRemarks;
 
@@ -539,7 +540,7 @@ namespace Accounting_System.Controllers
                         if (model.OriginalSeriesNumber.IsNullOrEmpty() && model.OriginalDocumentId == 0)
                         {
                             var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
-                            AuditTrail auditTrailBook = new(model.CanceledBy!, $"Cancelled service invoice# {model.ServiceInvoiceNo}", "Service Invoice", ipAddress!);
+                            AuditTrail auditTrailBook = new(createdBy, $"Cancelled service invoice# {model.ServiceInvoiceNo}", "Service Invoice", ipAddress!);
                             await _dbContext.AddAsync(auditTrailBook, cancellationToken);
                         }
 
@@ -566,7 +567,7 @@ namespace Accounting_System.Controllers
         {
             var model = await _dbContext.ServiceInvoices.FirstOrDefaultAsync(x => x.ServiceInvoiceId == id, cancellationToken);
             await using var transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
-
+            var createdBy = await _generalRepo.GetUserFullNameAsync(User.Identity!.Name!);
             try
             {
                 if (model != null)
@@ -579,7 +580,7 @@ namespace Accounting_System.Controllers
                         }
 
                         model.IsVoided = true;
-                        model.VoidedBy = _userManager.GetUserName(this.User);
+                        model.VoidedBy = createdBy;
                         model.VoidedDate = DateTime.Now;
 
                         #region --Audit Trail Recording
@@ -587,7 +588,7 @@ namespace Accounting_System.Controllers
                         if (model.OriginalSeriesNumber.IsNullOrEmpty() && model.OriginalDocumentId == 0)
                         {
                             var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
-                            AuditTrail auditTrailBook = new(model.VoidedBy!, $"Voided service invoice# {model.ServiceInvoiceNo}", "Service Invoice", ipAddress!);
+                            AuditTrail auditTrailBook = new(createdBy, $"Voided service invoice# {model.ServiceInvoiceNo}", "Service Invoice", ipAddress!);
                             await _dbContext.AddAsync(auditTrailBook, cancellationToken);
                         }
 
@@ -650,6 +651,7 @@ namespace Accounting_System.Controllers
             if (ModelState.IsValid)
             {
                 await using var transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
+                var createdBy = await _generalRepo.GetUserFullNameAsync(User.Identity!.Name!);
                 try
                 {
                     #region --Saving the default properties
@@ -673,7 +675,7 @@ namespace Accounting_System.Controllers
                         if (model.OriginalSeriesNumber.IsNullOrEmpty() && model.OriginalDocumentId == 0)
                         {
                             var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
-                            AuditTrail auditTrailBook = new(existingModel.CreatedBy!, $"Edited service invoice# {existingModel.ServiceInvoiceNo}", "Service Invoice", ipAddress!);
+                            AuditTrail auditTrailBook = new(createdBy, $"Edited service invoice# {existingModel.ServiceInvoiceNo}", "Service Invoice", ipAddress!);
                             await _dbContext.AddAsync(auditTrailBook, cancellationToken);
                         }
 

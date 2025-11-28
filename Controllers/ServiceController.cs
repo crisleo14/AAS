@@ -98,6 +98,7 @@ namespace Accounting_System.Controllers
             if (ModelState.IsValid)
             {
                 await using var transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
+                var createdBy = await _generalRepo.GetUserFullNameAsync(User.Identity!.Name!);
                 try
                 {
                     if (await _serviceRepo.IsServicesExist(services.Name, cancellationToken))
@@ -124,7 +125,7 @@ namespace Accounting_System.Controllers
                     services.UnearnedNo = unearned!.AccountNumber;
                     services.UnearnedTitle = unearned.AccountName;
 
-                    services.CreatedBy = User.Identity!.Name!.ToUpper();
+                    services.CreatedBy = createdBy;
                     services.ServiceNo = await _serviceRepo.GetLastNumber(cancellationToken);
 
                     #region --Audit Trail Recording
@@ -132,7 +133,7 @@ namespace Accounting_System.Controllers
                     if (services.OriginalServiceId == 0)
                     {
                         var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
-                        AuditTrail auditTrailBook = new(services.CreatedBy, $"Created new service {services.Name}", "Service", ipAddress!);
+                        AuditTrail auditTrailBook = new(createdBy, $"Created new service {services.Name}", "Service", ipAddress!);
                         await _dbContext.AddAsync(auditTrailBook, cancellationToken);
                     }
 
@@ -186,6 +187,7 @@ namespace Accounting_System.Controllers
                     return View(services);
                 }
                 await using var transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
+                var createdBy = await _generalRepo.GetUserFullNameAsync(User.Identity!.Name!);
                 try
                 {
 
@@ -200,7 +202,7 @@ namespace Accounting_System.Controllers
                         if (services.OriginalServiceId == 0)
                         {
                             var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
-                            AuditTrail auditTrailBook = new(User.Identity!.Name!, $"Update service {services.Name}", "Service", ipAddress!);
+                            AuditTrail auditTrailBook = new(createdBy, $"Update service {services.Name}", "Service", ipAddress!);
                             await _dbContext.AddAsync(auditTrailBook, cancellationToken);
                         }
 

@@ -56,6 +56,7 @@ namespace Accounting_System.Controllers
             if (ModelState.IsValid)
             {
                 await using var transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
+                var createdBy = await _generalRepo.GetUserFullNameAsync(User.Identity!.Name!);
                 try
                 {
                     if (await _productRepository.IsProductCodeExist(product.ProductCode!, cancellationToken))
@@ -70,14 +71,14 @@ namespace Accounting_System.Controllers
                         return View(product);
                     }
 
-                    product.CreatedBy = User.Identity!.Name!.ToUpper();
+                    product.CreatedBy = createdBy;
 
                     #region --Audit Trail Recording
 
                     if (product.OriginalProductId == 0)
                     {
                         var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
-                        AuditTrail auditTrailBook = new(product.CreatedBy, $"Created new product {product.ProductName}", "Product", ipAddress!);
+                        AuditTrail auditTrailBook = new(createdBy, $"Created new product {product.ProductName}", "Product", ipAddress!);
                         await _dbContext.AddAsync(auditTrailBook, cancellationToken);
                     }
 
@@ -126,6 +127,7 @@ namespace Accounting_System.Controllers
             if (ModelState.IsValid)
             {
                 await using var transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
+                var createdBy = await _generalRepo.GetUserFullNameAsync(User.Identity!.Name!);
                 try
                 {
                     var existingProduct = await _dbContext.Products.FirstOrDefaultAsync(x => x.ProductId == product.ProductId, cancellationToken);
@@ -133,8 +135,6 @@ namespace Accounting_System.Controllers
                     existingProduct.ProductName = product.ProductName;
                     existingProduct.ProductUnit = product.ProductUnit;
                     existingProduct.ProductId = product.ProductId;
-                    existingProduct.CreatedBy = product.CreatedBy;
-                    existingProduct.CreatedDate = product.CreatedDate;
 
                     if (_dbContext.ChangeTracker.HasChanges())
                     {
@@ -143,7 +143,7 @@ namespace Accounting_System.Controllers
                         if (product.OriginalProductId == 0)
                         {
                             var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
-                            AuditTrail auditTrailBook = new(User.Identity!.Name!, $"Updated product {product.ProductName}", "Product", ipAddress!);
+                            AuditTrail auditTrailBook = new(createdBy, $"Updated product {product.ProductName}", "Product", ipAddress!);
                             await _dbContext.AddAsync(auditTrailBook, cancellationToken);
                         }
 

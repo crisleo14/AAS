@@ -48,6 +48,7 @@ namespace Accounting_System.Repository
 
         public async Task AddBeginningInventory(BeginningInventoryViewModel viewModel, ClaimsPrincipal user, CancellationToken cancellationToken = default)
         {
+            var createdBy = await _generalRepo.GetUserFullNameAsync(user.Identity!.Name!);
             Inventory inventory = new()
             {
                 Date = viewModel.Date,
@@ -60,7 +61,7 @@ namespace Accounting_System.Repository
                 AverageCost = viewModel.Cost,
                 TotalBalance = viewModel.Quantity * viewModel.Cost,
                 IsValidated = true,
-                ValidatedBy = _userManager.GetUserName(user),
+                ValidatedBy = createdBy,
                 ValidatedDate = DateTime.Now
             };
 
@@ -70,6 +71,7 @@ namespace Accounting_System.Repository
 
         public async Task AddPurchaseToInventoryAsync(ReceivingReport receivingReport, ClaimsPrincipal user, CancellationToken cancellationToken = default)
         {
+            var createdBy = await _generalRepo.GetUserFullNameAsync(user.Identity!.Name!);
             var sortedInventory = await _dbContext.Inventories
             .Where(i => i.ProductId == receivingReport.PurchaseOrder!.Product!.ProductId)
             .OrderBy(i => i.Date)
@@ -98,7 +100,7 @@ namespace Accounting_System.Repository
                 Quantity = receivingReport.QuantityReceived,
                 Cost = receivingReport.PurchaseOrder.Price / 1.12m, //unit cost
                 IsValidated = true,
-                ValidatedBy = _userManager.GetUserName(user),
+                ValidatedBy = createdBy,
                 ValidatedDate = DateTime.Now,
                 Total = total,
                 InventoryBalance = inventoryBalance,
@@ -172,6 +174,7 @@ namespace Accounting_System.Repository
 
         public async Task AddSalesToInventoryAsync(SalesInvoice salesInvoice, ClaimsPrincipal user, CancellationToken cancellationToken = default)
         {
+            var createdBy = await _generalRepo.GetUserFullNameAsync(user.Identity!.Name!);
             var sortedInventory = await _dbContext.Inventories
             .Where(i => i.ProductId == salesInvoice.Product!.ProductId)
             .OrderBy(i => i.Date)
@@ -211,7 +214,7 @@ namespace Accounting_System.Repository
                     Quantity = salesInvoice.Quantity,
                     Cost = previousInventory.AverageCost,
                     IsValidated = true,
-                    ValidatedBy = _userManager.GetUserName(user),
+                    ValidatedBy = createdBy,
                     ValidatedDate = DateTime.Now,
                     Total = total,
                     InventoryBalance = inventoryBalance,
@@ -329,6 +332,7 @@ namespace Accounting_System.Repository
 
         public async Task AddActualInventory(ActualInventoryViewModel viewModel, ClaimsPrincipal user, CancellationToken cancellationToken = default)
         {
+            var createdBy = await _generalRepo.GetUserFullNameAsync(user.Identity!.Name!);
             #region -- Actual Inventory Entry --
 
             var total = viewModel.Variance * viewModel.AverageCost;
@@ -368,7 +372,7 @@ namespace Accounting_System.Repository
                         Description = particular,
                         Debit = Math.Abs(viewModel.Debit[i]),
                         Credit = Math.Abs(viewModel.Credit[i]),
-                        CreatedBy = _userManager.GetUserName(user),
+                        CreatedBy = createdBy,
                         CreatedDate = DateTime.Now,
                         IsPosted = false
                     });
@@ -382,6 +386,7 @@ namespace Accounting_System.Repository
 
         public async Task ChangePriceToInventoryAsync(PurchaseChangePriceViewModel purchaseChangePriceViewModel, ClaimsPrincipal user, CancellationToken cancellationToken = default)
         {
+            var createdBy = await _generalRepo.GetUserFullNameAsync(user.Identity!.Name!);
             var existingPo = await _dbContext.PurchaseOrders
                 .Include(po => po.Supplier).Include(purchaseOrder => purchaseOrder.Product)
                 .FirstOrDefaultAsync(po => po.PurchaseOrderId == purchaseChangePriceViewModel.POId, cancellationToken);
@@ -418,7 +423,7 @@ namespace Accounting_System.Repository
                     Quantity = 0,
                     Cost = 0,
                     IsValidated = true,
-                    ValidatedBy = _userManager.GetUserName(user),
+                    ValidatedBy = createdBy,
                     ValidatedDate = DateTime.Now
                 };
 
@@ -450,7 +455,7 @@ namespace Accounting_System.Repository
                         Particulars = $"Change price of {existingPo.PurchaseOrderNo} from {existingPo.Price} to {existingPo.FinalPrice }",
                         CRNo = "",
                         JVReason = "Change Price",
-                        CreatedBy = _userManager.GetUserName(user),
+                        CreatedBy = createdBy,
                         CreatedDate = DateTime.Now,
                         IsPosted = true,
                         PostedDate = DateTime.Now
@@ -570,7 +575,7 @@ namespace Accounting_System.Repository
                             AccountTitle = previousInventory.Product.ProductCode == "PET001" ? "101040100 Inventory - Biodiesel" : previousInventory.Product.ProductCode == "PET002" ? "101040200 Inventory - Econogas" : "101040300 Inventory - Envirogas",
                             Debit = Math.Abs(productAmount),
                             Credit = 0,
-                            CreatedBy = _userManager.GetUserName(user),
+                            CreatedBy = createdBy,
                             CreatedDate = DateTime.Now
                         },
                         new JournalBook
@@ -581,7 +586,7 @@ namespace Accounting_System.Repository
                             AccountTitle = "101060200 Vat - Input",
                             Debit = Math.Abs(vatInput),
                             Credit = 0,
-                            CreatedBy = _userManager.GetUserName(user),
+                            CreatedBy = createdBy,
                             CreatedDate = DateTime.Now
                         },
                         new JournalBook
@@ -592,7 +597,7 @@ namespace Accounting_System.Repository
                             AccountTitle = "201030210 Expanded Withholding Tax 1%",
                             Debit = 0,
                             Credit = Math.Abs(wht),
-                            CreatedBy = _userManager.GetUserName(user),
+                            CreatedBy = createdBy,
                             CreatedDate = DateTime.Now
                         },
                         new JournalBook
@@ -603,7 +608,7 @@ namespace Accounting_System.Repository
                             AccountTitle = "202010100 AP-Trade Payable",
                             Debit = 0,
                             Credit = Math.Abs(apTradePayable),
-                            CreatedBy = _userManager.GetUserName(user),
+                            CreatedBy = createdBy,
                             CreatedDate = DateTime.Now
                         }
                     };
@@ -625,7 +630,7 @@ namespace Accounting_System.Repository
                             AccountTitle = previousInventory.Product.ProductCode == "PET001" ? "101040100 Inventory - Biodiesel" : previousInventory.Product.ProductCode == "PET002" ? "101040200 Inventory - Econogas" : "101040300 Inventory - Envirogas",
                             Debit = 0,
                             Credit = Math.Abs(productAmount),
-                            CreatedBy = _userManager.GetUserName(user),
+                            CreatedBy = createdBy,
                             CreatedDate = DateTime.Now
                         },
                         new JournalBook
@@ -636,7 +641,7 @@ namespace Accounting_System.Repository
                             AccountTitle = "101060200 Vat - Input",
                             Debit = 0,
                             Credit = Math.Abs(vatInput),
-                            CreatedBy = _userManager.GetUserName(user),
+                            CreatedBy = createdBy,
                             CreatedDate = DateTime.Now
                         },
                         new JournalBook
@@ -647,7 +652,7 @@ namespace Accounting_System.Repository
                             AccountTitle = "201030210 Expanded Withholding Tax 1%",
                             Debit = Math.Abs(wht),
                             Credit = 0,
-                            CreatedBy = _userManager.GetUserName(user),
+                            CreatedBy = createdBy,
                             CreatedDate = DateTime.Now
                         },
                         new JournalBook
@@ -658,7 +663,7 @@ namespace Accounting_System.Repository
                             AccountTitle = "202010100 AP-Trade Payable",
                             Debit = Math.Abs(apTradePayable),
                             Credit = 0,
-                            CreatedBy = _userManager.GetUserName(user),
+                            CreatedBy = createdBy,
                             CreatedDate = DateTime.Now
                         }
                     };
@@ -688,7 +693,7 @@ namespace Accounting_System.Repository
                             NetPurchases = inventory.Total,
                             PONo = existingPo.PurchaseOrderNo!,
                             DueDate = DateOnly.FromDateTime(DateTime.MinValue),
-                            CreatedBy = _userManager.GetUserName(user),
+                            CreatedBy = createdBy,
                             CreatedDate = DateTime.Now
                         }
                     };
@@ -712,7 +717,7 @@ namespace Accounting_System.Repository
                             AccountTitle = previousInventory.Product.ProductCode == "PET001" ? "Inventory - Biodiesel" : previousInventory.Product.ProductCode == "PET002" ? "Inventory - Econogas" : "Inventory - Envirogas",
                             Debit = Math.Abs(productAmount),
                             Credit = 0,
-                            CreatedBy = _userManager.GetUserName(user),
+                            CreatedBy = createdBy,
                             CreatedDate = DateTime.Now
                         },
                         new GeneralLedgerBook
@@ -724,7 +729,7 @@ namespace Accounting_System.Repository
                             AccountTitle = "Vat - Input",
                             Debit = Math.Abs(vatInput),
                             Credit = 0,
-                            CreatedBy = _userManager.GetUserName(user),
+                            CreatedBy = createdBy,
                             CreatedDate = DateTime.Now
                         },
                         new GeneralLedgerBook
@@ -736,7 +741,7 @@ namespace Accounting_System.Repository
                             AccountTitle = "Expanded Withholding Tax 1%",
                             Debit = 0,
                             Credit = Math.Abs(wht),
-                            CreatedBy = _userManager.GetUserName(user),
+                            CreatedBy = createdBy,
                             CreatedDate = DateTime.Now
                         },
                         new GeneralLedgerBook
@@ -748,7 +753,7 @@ namespace Accounting_System.Repository
                             AccountTitle = "AP-Trade Payable",
                             Debit = 0,
                             Credit = Math.Abs(apTradePayable),
-                            CreatedBy = _userManager.GetUserName(user),
+                            CreatedBy = createdBy,
                             CreatedDate = DateTime.Now
                         }
                     };
@@ -771,7 +776,7 @@ namespace Accounting_System.Repository
                             AccountTitle = previousInventory.Product.ProductCode == "PET001" ? "Inventory - Biodiesel" : previousInventory.Product.ProductCode == "PET002" ? "Inventory - Econogas" : "Inventory - Envirogas",
                             Debit = 0,
                             Credit = Math.Abs(productAmount),
-                            CreatedBy = _userManager.GetUserName(user),
+                            CreatedBy = createdBy,
                             CreatedDate = DateTime.Now
                         },
                         new GeneralLedgerBook
@@ -783,7 +788,7 @@ namespace Accounting_System.Repository
                             AccountTitle = "Vat - Input",
                             Debit = 0,
                             Credit = Math.Abs(vatInput),
-                            CreatedBy = _userManager.GetUserName(user),
+                            CreatedBy = createdBy,
                             CreatedDate = DateTime.Now
                         },
                         new GeneralLedgerBook
@@ -795,7 +800,7 @@ namespace Accounting_System.Repository
                             AccountTitle = "Expanded Withholding Tax 1%",
                             Debit = Math.Abs(wht),
                             Credit = 0,
-                            CreatedBy = _userManager.GetUserName(user),
+                            CreatedBy = createdBy,
                             CreatedDate = DateTime.Now
                         },
                         new GeneralLedgerBook
@@ -807,7 +812,7 @@ namespace Accounting_System.Repository
                             AccountTitle = "AP-Trade Payable",
                             Debit = Math.Abs(apTradePayable),
                             Credit = 0,
-                            CreatedBy = _userManager.GetUserName(user),
+                            CreatedBy = createdBy,
                             CreatedDate = DateTime.Now
                         }
                     };

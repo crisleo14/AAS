@@ -60,6 +60,7 @@ namespace Accounting_System.Controllers
             if (ModelState.IsValid)
             {
                 await using var transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
+                var createdBy = await _generalRepo.GetUserFullNameAsync(User.Identity!.Name!);
                 try
                 {
                     if (await _customerRepo.IsCustomerExist(customer.CustomerName, cancellationToken))
@@ -75,14 +76,14 @@ namespace Accounting_System.Controllers
                     }
 
                     customer.Number = await _customerRepo.GetLastNumber(cancellationToken);
-                    customer.CreatedBy = _userManager.GetUserName(this.User);
+                    customer.CreatedBy = createdBy;
 
                     #region --Audit Trail Recording
 
                     if (customer.OriginalCustomerId == 0)
                     {
                         var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
-                        AuditTrail auditTrailBook = new(customer.CreatedBy!, $"Created new customer {customer.CustomerName}", "Customer", ipAddress!);
+                        AuditTrail auditTrailBook = new(createdBy, $"Created new customer {customer.CustomerName}", "Customer", ipAddress!);
                         await _dbContext.AddAsync(auditTrailBook, cancellationToken);
                     }
 
@@ -135,6 +136,7 @@ namespace Accounting_System.Controllers
             if (ModelState.IsValid)
             {
                 await using var transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
+                var createdBy = await _generalRepo.GetUserFullNameAsync(User.Identity!.Name!);
                 try
                 {
                     existingModel.CustomerName = customer.CustomerName;
@@ -154,7 +156,7 @@ namespace Accounting_System.Controllers
                         if (customer.OriginalCustomerId == 0)
                         {
                             var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
-                            AuditTrail auditTrailBook = new(User.Identity!.Name!, $"Updated customer {customer.CustomerName}", "Customer", ipAddress!);
+                            AuditTrail auditTrailBook = new(createdBy, $"Updated customer {customer.CustomerName}", "Customer", ipAddress!);
                             await _dbContext.AddAsync(auditTrailBook, cancellationToken);
                         }
 

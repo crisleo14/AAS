@@ -298,6 +298,7 @@ namespace Accounting_System.Controllers
         public async Task<IActionResult> ValidateInventory(int? id, CancellationToken cancellationToken)
         {
             await using var transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
+            var createdBy = await _generalRepo.GetUserFullNameAsync(User.Identity!.Name!);
             try
             {
                 if (id == null || id == 0)
@@ -322,10 +323,10 @@ namespace Accounting_System.Controllers
                             JVReason = "Actual Inventory",
                             Particulars = inventory!.Particular,
                             Date = inventory.Date,
-                            CreatedBy = _userManager.GetUserName(this.User),
+                            CreatedBy = createdBy,
                             CreatedDate = DateTime.Now,
                             IsPosted = true,
-                            PostedBy = _userManager.GetUserName(this.User),
+                            PostedBy = createdBy,
                             PostedDate = DateTime.Now
                         };
 
@@ -351,7 +352,7 @@ namespace Accounting_System.Controllers
                         }
 
                         inventory.IsValidated = true;
-                        inventory.ValidatedBy = _userManager.GetUserName(this.User);
+                        inventory.ValidatedBy = createdBy;
                         inventory.ValidatedDate = DateTime.Now;
 
                         await _dbContext.JournalVoucherDetails.AddRangeAsync(details, cancellationToken);
@@ -372,7 +373,7 @@ namespace Accounting_System.Controllers
                                 AccountTitle = entry.AccountNo + " " + entry.AccountTitle,
                                 Debit = Math.Abs(entry.Debit),
                                 Credit = Math.Abs(entry.Credit),
-                                CreatedBy = _userManager.GetUserName(this.User),
+                                CreatedBy = createdBy,
                                 CreatedDate = DateTime.Now
                             });
                         }

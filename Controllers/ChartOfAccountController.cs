@@ -75,9 +75,10 @@ namespace Accounting_System.Controllers
             if (ModelState.IsValid)
             {
                 await using var transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
+                var createdBy = await _generalRepo.GetUserFullNameAsync(User.Identity!.Name!);
                 try
                 {
-                    chartOfAccount.CreatedBy = _userManager.GetUserName(this.User);
+                    chartOfAccount.CreatedBy = createdBy;
 
                     if (fourthLevel == "create-new" || fourthLevel == null)
                     {
@@ -157,6 +158,7 @@ namespace Accounting_System.Controllers
             if (ModelState.IsValid)
             {
                 await using var transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
+                var createdBy = await _generalRepo.GetUserFullNameAsync(User.Identity!.Name!);
                 try
                 {
                     var existingModel = await _dbContext.ChartOfAccounts.FirstOrDefaultAsync(x => x.AccountId == id, cancellationToken);
@@ -172,13 +174,13 @@ namespace Accounting_System.Controllers
 
                         if (_dbContext.ChangeTracker.HasChanges())
                         {
-                            existingModel.EditedBy = _userManager.GetUserName(this.User);
+                            existingModel.EditedBy = createdBy;
                             existingModel.EditedDate = DateTime.Now;
 
                             #region --Audit Trail Recording
 
                             var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
-                            AuditTrail auditTrailBook = new(User.Identity!.Name!,
+                            AuditTrail auditTrailBook = new(createdBy,
                                 $"Updated chart of account {chartOfAccount.AccountNumber} {chartOfAccount.AccountName}",
                                 "Chart of Account", ipAddress!);
                             await _dbContext.AddAsync(auditTrailBook, cancellationToken);

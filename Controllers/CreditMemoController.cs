@@ -164,6 +164,7 @@ namespace Accounting_System.Controllers
             if (ModelState.IsValid)
             {
                 await using var transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
+                var createdBy = await _generalRepo.GetUserFullNameAsync(User.Identity!.Name!);
                 try
                 {
                     #region -- checking for unposted DM or CM --
@@ -223,7 +224,7 @@ namespace Accounting_System.Controllers
                     #endregion --Validating the series--
 
                     model.CreditMemoNo = generatedCm;
-                    model.CreatedBy = _userManager.GetUserName(this.User);
+                    model.CreatedBy = createdBy;
 
                     if (model.Source == "Sales Invoice")
                     {
@@ -253,7 +254,7 @@ namespace Accounting_System.Controllers
                     if (model.OriginalSeriesNumber.IsNullOrEmpty() && model.OriginalDocumentId == 0)
                     {
                         var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
-                        AuditTrail auditTrailBook = new(model.CreatedBy!, $"Create new credit memo# {model.CreditMemoNo}", "Credit Memo", ipAddress!);
+                        AuditTrail auditTrailBook = new(createdBy, $"Create new credit memo# {model.CreditMemoNo}", "Credit Memo", ipAddress!);
                         await _dbContext.AddAsync(auditTrailBook, cancellationToken);
                     }
 
@@ -331,6 +332,7 @@ namespace Accounting_System.Controllers
             if (ModelState.IsValid)
             {
                 await using var transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
+                var createdBy = await _generalRepo.GetUserFullNameAsync(User.Identity!.Name!);
                 try
                 {
                     if (model.Source == "Sales Invoice")
@@ -384,7 +386,7 @@ namespace Accounting_System.Controllers
                         if (existingCm!.OriginalSeriesNumber.IsNullOrEmpty() && existingCm.OriginalDocumentId == 0)
                         {
                             var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
-                            AuditTrail auditTrailBook = new(User.Identity!.Name!, $"Edit credit memo# {existingCm.CreditMemoNo}", "Credit Memo", ipAddress!);
+                            AuditTrail auditTrailBook = new(createdBy, $"Edit credit memo# {existingCm.CreditMemoNo}", "Credit Memo", ipAddress!);
                             await _dbContext.AddAsync(auditTrailBook, cancellationToken);
                         }
 
@@ -473,6 +475,7 @@ namespace Accounting_System.Controllers
         public async Task<IActionResult> Printed(int id, CancellationToken cancellationToken)
         {
             var cm = await _dbContext.CreditMemos.FirstOrDefaultAsync(x => x.CreditMemoId == id, cancellationToken);
+            var createdBy = await _generalRepo.GetUserFullNameAsync(User.Identity!.Name!);
             if (cm != null && !cm.IsPrinted)
             {
 
@@ -481,8 +484,7 @@ namespace Accounting_System.Controllers
                 if (cm.OriginalSeriesNumber.IsNullOrEmpty() && cm.OriginalDocumentId == 0)
                 {
                     var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
-                    var printedBy = _userManager.GetUserName(this.User);
-                    AuditTrail auditTrailBook = new(printedBy!, $"Printed original copy of cm# {cm.CreditMemoNo}", "Credit Memo", ipAddress!);
+                    AuditTrail auditTrailBook = new(createdBy, $"Printed original copy of cm# {cm.CreditMemoNo}", "Credit Memo", ipAddress!);
                     await _dbContext.AddAsync(auditTrailBook, cancellationToken);
                 }
 
@@ -499,12 +501,13 @@ namespace Accounting_System.Controllers
             var model = await _creditMemoRepo.FindCM(id, cancellationToken);
 
             await using var transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
+            var createdBy = await _generalRepo.GetUserFullNameAsync(User.Identity!.Name!);
             try
             {
                 if (!model.IsPosted)
                 {
                     model.IsPosted = true;
-                    model.PostedBy = _userManager.GetUserName(this.User);
+                    model.PostedBy = createdBy;
                     model.PostedDate = DateTime.Now;
 
                     var accountTitlesDto = await _generalRepo.GetListOfAccountTitleDto(cancellationToken);
@@ -934,7 +937,7 @@ namespace Accounting_System.Controllers
                     if (model.OriginalSeriesNumber.IsNullOrEmpty() && model.OriginalDocumentId == 0)
                     {
                         var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
-                        AuditTrail auditTrailBook = new(model.PostedBy!, $"Posted credit memo# {model.CreditMemoNo}", "Credit Memo", ipAddress!);
+                        AuditTrail auditTrailBook = new(createdBy, $"Posted credit memo# {model.CreditMemoNo}", "Credit Memo", ipAddress!);
                         await _dbContext.AddAsync(auditTrailBook, cancellationToken);
                     }
 
@@ -960,6 +963,7 @@ namespace Accounting_System.Controllers
         {
             var model = await _dbContext.CreditMemos.FirstOrDefaultAsync(x => x.CreditMemoId == id, cancellationToken);
             await using var transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
+            var createdBy = await _generalRepo.GetUserFullNameAsync(User.Identity!.Name!);
             try
             {
                 if (model != null)
@@ -972,7 +976,7 @@ namespace Accounting_System.Controllers
                         }
 
                         model.IsVoided = true;
-                        model.VoidedBy = _userManager.GetUserName(this.User);
+                        model.VoidedBy = createdBy;
                         model.VoidedDate = DateTime.Now;
 
                         await _generalRepo.RemoveRecords<SalesBook>(crb => crb.SerialNo == model.CreditMemoNo, cancellationToken);
@@ -983,7 +987,7 @@ namespace Accounting_System.Controllers
                         if (model.OriginalSeriesNumber.IsNullOrEmpty() && model.OriginalDocumentId == 0)
                         {
                             var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
-                            AuditTrail auditTrailBook = new(model.VoidedBy!, $"Voided credit memo# {model.CreditMemoNo}", "Credit Memo", ipAddress!);
+                            AuditTrail auditTrailBook = new(createdBy, $"Voided credit memo# {model.CreditMemoNo}", "Credit Memo", ipAddress!);
                             await _dbContext.AddAsync(auditTrailBook, cancellationToken);
                         }
 
@@ -1010,7 +1014,7 @@ namespace Accounting_System.Controllers
         {
             var model = await _dbContext.CreditMemos.FirstOrDefaultAsync(x => x.CreditMemoId == id, cancellationToken);
             await using var transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
-
+            var createdBy = await _generalRepo.GetUserFullNameAsync(User.Identity!.Name!);
             try
             {
                 if (model != null)
@@ -1018,7 +1022,7 @@ namespace Accounting_System.Controllers
                     if (!model.IsCanceled)
                     {
                         model.IsCanceled = true;
-                        model.CanceledBy = _userManager.GetUserName(this.User);
+                        model.CanceledBy = createdBy;
                         model.CanceledDate = DateTime.Now;
                         model.CancellationRemarks = cancellationRemarks;
 
@@ -1027,7 +1031,7 @@ namespace Accounting_System.Controllers
                         if (model.OriginalSeriesNumber.IsNullOrEmpty() && model.OriginalDocumentId == 0)
                         {
                             var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
-                            AuditTrail auditTrailBook = new(model.CanceledBy!, $"Cancelled credit memo# {model.CreditMemoNo}", "Credit Memo", ipAddress!);
+                            AuditTrail auditTrailBook = new(createdBy, $"Cancelled credit memo# {model.CreditMemoNo}", "Credit Memo", ipAddress!);
                             await _dbContext.AddAsync(auditTrailBook, cancellationToken);
                         }
 

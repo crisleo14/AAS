@@ -157,6 +157,7 @@ namespace Accounting_System.Controllers
             if (ModelState.IsValid)
             {
                 await using var transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
+                var createdBy = await _generalRepo.GetUserFullNameAsync(User.Identity!.Name!);
                 try
                 {
                     var generatedPo = await _purchaseOrderRepo.GeneratePONo(cancellationToken);
@@ -178,7 +179,7 @@ namespace Accounting_System.Controllers
                     }
 
                     model.PurchaseOrderNo = generatedPo;
-                    model.CreatedBy = User.Identity!.Name;
+                    model.CreatedBy = createdBy;
                     model.Amount = model.Quantity * model.Price;
                     model.SupplierNo = await _purchaseOrderRepo.GetSupplierNoAsync(model.SupplierId, cancellationToken);
                     model.ProductNo = await _purchaseOrderRepo.GetProductNoAsync(model.ProductId, cancellationToken);
@@ -190,7 +191,7 @@ namespace Accounting_System.Controllers
                     if (model.OriginalSeriesNumber.IsNullOrEmpty() && model.OriginalDocumentId == 0)
                     {
                         var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
-                        AuditTrail auditTrailBook = new(model.CreatedBy!, $"Create new purchase order# {model.PurchaseOrderNo}", "Purchase Order", ipAddress!);
+                        AuditTrail auditTrailBook = new(createdBy, $"Create new purchase order# {model.PurchaseOrderNo}", "Purchase Order", ipAddress!);
                         await _dbContext.AddAsync(auditTrailBook, cancellationToken);
                     }
 
@@ -252,6 +253,7 @@ namespace Accounting_System.Controllers
             if (ModelState.IsValid)
             {
                 await using var transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
+                var createdBy = await _generalRepo.GetUserFullNameAsync(User.Identity!.Name!);
                 try
                 {
                     if (existingModel == null)
@@ -277,7 +279,7 @@ namespace Accounting_System.Controllers
                         if (existingModel.OriginalSeriesNumber.IsNullOrEmpty() && existingModel.OriginalDocumentId == 0)
                         {
                             var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
-                            AuditTrail auditTrailBook = new(existingModel.CreatedBy!, $"Edit purchase order# {existingModel.PurchaseOrderNo}", "Purchase Order", ipAddress!);
+                            AuditTrail auditTrailBook = new(createdBy, $"Edit purchase order# {existingModel.PurchaseOrderNo}", "Purchase Order", ipAddress!);
                             await _dbContext.AddAsync(auditTrailBook, cancellationToken);
                         }
 
@@ -352,6 +354,7 @@ namespace Accounting_System.Controllers
         public async Task<IActionResult> Printed(int id, CancellationToken cancellationToken)
         {
             var po = await _dbContext.PurchaseOrders.FirstOrDefaultAsync(x => x.PurchaseOrderId == id, cancellationToken);
+            var createdBy = await _generalRepo.GetUserFullNameAsync(User.Identity!.Name!);
             if (po != null && !po.IsPrinted)
             {
 
@@ -360,8 +363,7 @@ namespace Accounting_System.Controllers
                 if (po.OriginalSeriesNumber.IsNullOrEmpty() && po.OriginalDocumentId == 0)
                 {
                     var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
-                    var printedBy = User.Identity!.Name;
-                    AuditTrail auditTrailBook = new(printedBy!, $"Printed original copy of po# {po.PurchaseOrderNo}", "Purchase Order", ipAddress!);
+                    AuditTrail auditTrailBook = new(createdBy, $"Printed original copy of po# {po.PurchaseOrderNo}", "Purchase Order", ipAddress!);
                     await _dbContext.AddAsync(auditTrailBook, cancellationToken);
                 }
 
@@ -377,7 +379,7 @@ namespace Accounting_System.Controllers
         {
             var model = await _dbContext.PurchaseOrders.FirstOrDefaultAsync(x => x.PurchaseOrderId == id, cancellationToken);
             await using var transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
-
+            var createdBy = await _generalRepo.GetUserFullNameAsync(User.Identity!.Name!);
             try
             {
                 if (model != null)
@@ -385,7 +387,7 @@ namespace Accounting_System.Controllers
                     if (!model.IsPosted)
                     {
                         model.IsPosted = true;
-                        model.PostedBy = _userManager.GetUserName(this.User);
+                        model.PostedBy = createdBy;
                         model.PostedDate = DateTime.Now;
 
                         #region --Audit Trail Recording
@@ -393,7 +395,7 @@ namespace Accounting_System.Controllers
                         if (model.OriginalSeriesNumber.IsNullOrEmpty() && model.OriginalDocumentId == 0)
                         {
                             var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
-                            AuditTrail auditTrailBook = new(model.PostedBy!, $"Posted purchase order# {model.PurchaseOrderNo}", "Purchase Order", ipAddress!);
+                            AuditTrail auditTrailBook = new(createdBy, $"Posted purchase order# {model.PurchaseOrderNo}", "Purchase Order", ipAddress!);
                             await _dbContext.AddAsync(auditTrailBook, cancellationToken);
                         }
 
@@ -420,7 +422,7 @@ namespace Accounting_System.Controllers
         {
             var model = await _dbContext.PurchaseOrders.FirstOrDefaultAsync(x => x.PurchaseOrderId == id, cancellationToken);
             await using var transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
-
+            var createdBy = await _generalRepo.GetUserFullNameAsync(User.Identity!.Name!);
             try
             {
                 if (model != null)
@@ -433,7 +435,7 @@ namespace Accounting_System.Controllers
                         }
 
                         model.IsVoided = true;
-                        model.VoidedBy = _userManager.GetUserName(this.User);
+                        model.VoidedBy = createdBy;
                         model.VoidedDate = DateTime.Now;
 
                         #region --Audit Trail Recording
@@ -441,7 +443,7 @@ namespace Accounting_System.Controllers
                         if (model.OriginalSeriesNumber.IsNullOrEmpty() && model.OriginalDocumentId == 0)
                         {
                             var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
-                            AuditTrail auditTrailBook = new(model.VoidedBy!, $"Voided purchase order# {model.PurchaseOrderNo}", "Purchase Order", ipAddress!);
+                            AuditTrail auditTrailBook = new(createdBy, $"Voided purchase order# {model.PurchaseOrderNo}", "Purchase Order", ipAddress!);
                             await _dbContext.AddAsync(auditTrailBook, cancellationToken);
                         }
 
@@ -468,7 +470,7 @@ namespace Accounting_System.Controllers
         {
             var model = await _dbContext.PurchaseOrders.FirstOrDefaultAsync(x => x.PurchaseOrderId == id, cancellationToken);
             await using var transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
-
+            var createdBy = await _generalRepo.GetUserFullNameAsync(User.Identity!.Name!);
             try
             {
                 if (model != null)
@@ -476,7 +478,7 @@ namespace Accounting_System.Controllers
                     if (!model.IsCanceled)
                     {
                         model.IsCanceled = true;
-                        model.CanceledBy = _userManager.GetUserName(this.User);
+                        model.CanceledBy = createdBy;
                         model.CanceledDate = DateTime.Now;
                         model.CancellationRemarks = cancellationRemarks;
 
@@ -485,7 +487,7 @@ namespace Accounting_System.Controllers
                         if (model.OriginalSeriesNumber.IsNullOrEmpty() && model.OriginalDocumentId == 0)
                         {
                             var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
-                            AuditTrail auditTrailBook = new(model.CanceledBy!, $"Cancelled purchase order# {model.PurchaseOrderNo}", "Purchase Order", ipAddress!);
+                            AuditTrail auditTrailBook = new(createdBy, $"Cancelled purchase order# {model.PurchaseOrderNo}", "Purchase Order", ipAddress!);
                             await _dbContext.AddAsync(auditTrailBook, cancellationToken);
                         }
 
@@ -614,7 +616,7 @@ namespace Accounting_System.Controllers
         {
             var purchaseOrder = await _dbContext.PurchaseOrders.FirstOrDefaultAsync(x => x.PurchaseOrderId == model.PurchaseOrderId, cancellationToken);
             await using var transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
-
+            var createdBy = await _generalRepo.GetUserFullNameAsync(User.Identity!.Name!);
             try
             {
                 if (purchaseOrder != null)
@@ -628,7 +630,7 @@ namespace Accounting_System.Controllers
                         if (model.OriginalSeriesNumber.IsNullOrEmpty() && model.OriginalDocumentId == 0)
                         {
                             var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
-                            AuditTrail auditTrailBook = new(User.Identity!.Name!, $"Closed purchase order# {model.PurchaseOrderNo}", "Purchase Order", ipAddress!);
+                            AuditTrail auditTrailBook = new(createdBy, $"Closed purchase order# {model.PurchaseOrderNo}", "Purchase Order", ipAddress!);
                             await _dbContext.AddAsync(auditTrailBook, cancellationToken);
                         }
 
