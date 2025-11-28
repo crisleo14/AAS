@@ -64,7 +64,6 @@ namespace Accounting_System.Models.AccountsPayable
 
         [Display(Name = "Check #")]
         [StringLength(50)]
-        [RegularExpression(@"^(?:\d{10,}|DM\d{10})$", ErrorMessage = "Invalid format. Please enter either a 'DM' followed by a 10-digits or CV number minimum 10 digits.")]
         public string? CheckNo { get; set; }
 
         [StringLength(20)]

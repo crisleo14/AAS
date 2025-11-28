@@ -37,6 +37,7 @@ namespace Accounting_System.Models.ViewModels
 
         [StringLength(50)]
         [Display(Name = "Check No.")]
+        [RegularExpression(@"^(?:\d{7,}|DM.*)$", ErrorMessage = "Invalid format. Please enter either a 'DM' followed by DM format or CV number minimum 7 digits.")]
         public string CheckNo { get; set; }
 
         [Display(Name = "Check Date")]
