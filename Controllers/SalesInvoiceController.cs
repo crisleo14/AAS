@@ -36,7 +36,7 @@ namespace Accounting_System.Controllers
             _dbContext = dbContext;
             _salesInvoiceRepo = salesInvoiceRepo;
             _logger = logger;
-            this._userManager = userManager;
+            _userManager = userManager;
             _inventoryRepo = inventoryRepo;
             _generalRepo = generalRepo;
         }

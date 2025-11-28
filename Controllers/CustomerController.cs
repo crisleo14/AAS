@@ -19,11 +19,16 @@ namespace Accounting_System.Controllers
 
         private readonly UserManager<IdentityUser> _userManager;
 
-        public CustomerController(ApplicationDbContext dbContext, CustomerRepo customerRepo, UserManager<IdentityUser> userManager)
+        private readonly GeneralRepo _generalRepo;
+
+        public CustomerController(ApplicationDbContext dbContext, CustomerRepo customerRepo,
+            UserManager<IdentityUser> userManager,
+            GeneralRepo generalRepo)
         {
             _dbContext = dbContext;
             _customerRepo = customerRepo;
-            this._userManager = userManager;
+            _userManager = userManager;
+            _generalRepo = generalRepo;
         }
 
         public async Task<IActionResult> Index(CancellationToken cancellationToken)

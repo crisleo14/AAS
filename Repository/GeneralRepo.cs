@@ -3,7 +3,9 @@ using Accounting_System.Models.Reports;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
+using Accounting_System.Models;
 using Accounting_System.Models.DTOs;
+using Microsoft.AspNetCore.Identity;
 
 namespace Accounting_System.Repository
 {
@@ -11,11 +13,14 @@ namespace Accounting_System.Repository
     {
         private readonly ApplicationDbContext _dbContext;
 
+        private readonly UserManager<IdentityUser> _userManager;
+
         private const decimal VatRate = 0.12m;
 
-        public GeneralRepo(ApplicationDbContext dbContext)
+        public GeneralRepo(ApplicationDbContext dbContext, UserManager<IdentityUser> userManager)
         {
             _dbContext = dbContext;
+            _userManager = userManager;
         }
 
         public async Task<int> RemoveRecords<TEntity>(Expression<Func<TEntity, bool>> predicate, CancellationToken cancellationToken = default)
@@ -203,6 +208,20 @@ namespace Accounting_System.Repository
                 "PET003" => ("401010300", "Sales - Envirogas"),
                 _ => throw new ArgumentException($"Invalid product code: {productCode}"),
             };
+        }
+
+        public async Task<string> GetUserFullNameAsync(string userName)
+        {
+            try
+            {
+                var user = await _userManager.FindByNameAsync(userName) as ApplicationUser;
+
+                return $"{user?.FirstName.ToUpper()} {user?.LastName.ToUpper()}";
+            }
+            catch (Exception ex)
+            {
+                throw new ArgumentException(ex.Message);
+            }
         }
     }
 }

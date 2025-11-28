@@ -22,11 +22,15 @@ namespace Accounting_System.Controllers
 
         private readonly ChartOfAccountRepo _coaRepo;
 
-        public ChartOfAccountController(ApplicationDbContext dbContext, UserManager<IdentityUser> userManager, ChartOfAccountRepo coaRepo)
+        private readonly GeneralRepo _generalRepo;
+
+        public ChartOfAccountController(ApplicationDbContext dbContext, UserManager<IdentityUser> userManager,
+            ChartOfAccountRepo coaRepo, GeneralRepo generalRepo)
         {
             _dbContext = dbContext;
             _userManager = userManager;
             _coaRepo = coaRepo;
+            _generalRepo = generalRepo;
         }
 
         public async Task<IActionResult> Index(CancellationToken cancellationToken)

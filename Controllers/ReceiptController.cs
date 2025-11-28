@@ -36,7 +36,7 @@ namespace Accounting_System.Controllers
         public ReceiptController(ApplicationDbContext dbContext, UserManager<IdentityUser> userManager, ReceiptRepo receiptRepo, IWebHostEnvironment webHostEnvironment, GeneralRepo generalRepo, SalesInvoiceRepo salesInvoiceRepo, ServiceInvoiceRepo serviceInvoiceRepo)
         {
             _dbContext = dbContext;
-            this._userManager = userManager;
+            _userManager = userManager;
             _receiptRepo = receiptRepo;
             _webHostEnvironment = webHostEnvironment;
             _generalRepo = generalRepo;

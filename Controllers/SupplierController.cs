@@ -21,11 +21,16 @@ namespace Accounting_System.Controllers
 
         private readonly IWebHostEnvironment _webHostEnvironment;
 
-        public SupplierController(ApplicationDbContext context, SupplierRepo supplierRepo, IWebHostEnvironment webHostEnvironment)
+        private readonly GeneralRepo _generalRepo;
+
+        public SupplierController(ApplicationDbContext context, SupplierRepo supplierRepo,
+            IWebHostEnvironment webHostEnvironment,
+            GeneralRepo generalRepo)
         {
             _context = context;
             _supplierRepo = supplierRepo;
             _webHostEnvironment = webHostEnvironment;
+            _generalRepo = generalRepo;
         }
 
         public async Task<IActionResult> Index(CancellationToken cancellationToken)

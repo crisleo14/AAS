@@ -21,13 +21,18 @@ namespace Accounting_System.Controllers
         private readonly ReportRepo _reportRepo;
         private readonly ChartOfAccountRepo _chartOfAccountRepo;
         private readonly UserManager<IdentityUser> _userManager;
+        private readonly GeneralRepo _generalRepo;
 
-        public ReportController(ApplicationDbContext dbContext, ReportRepo reportRepo, ChartOfAccountRepo chartOfAccountRepo, UserManager<IdentityUser> userManager)
+        public ReportController(ApplicationDbContext dbContext, ReportRepo reportRepo,
+            ChartOfAccountRepo chartOfAccountRepo,
+            UserManager<IdentityUser> userManager,
+            GeneralRepo generalRepo)
         {
             _dbContext = dbContext;
             _reportRepo = reportRepo;
             _chartOfAccountRepo = chartOfAccountRepo;
             _userManager = userManager;
+            _generalRepo = generalRepo;
         }
 
         public async Task<IActionResult> SalesBook(CancellationToken cancellationToken)

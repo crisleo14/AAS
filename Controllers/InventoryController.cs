@@ -25,13 +25,20 @@ namespace Accounting_System.Controllers
 
         private readonly ILogger<InventoryController> _logger;
 
-        public InventoryController(ApplicationDbContext dbContext, InventoryRepo inventoryRepo, JournalVoucherRepo journalVoucherRepo, UserManager<IdentityUser> userManager, ILogger<InventoryController> logger)
+        private readonly GeneralRepo _generalRepo;
+
+        public InventoryController(ApplicationDbContext dbContext, InventoryRepo inventoryRepo,
+            JournalVoucherRepo journalVoucherRepo,
+            UserManager<IdentityUser> userManager,
+            ILogger<InventoryController> logger,
+            GeneralRepo generalRepo)
         {
             _dbContext = dbContext;
             _inventoryRepo = inventoryRepo;
             _journalVoucherRepo = journalVoucherRepo;
             _userManager = userManager;
             _logger = logger;
+            _generalRepo = generalRepo;
         }
 
         [HttpGet]

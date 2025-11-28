@@ -18,10 +18,14 @@ namespace Accounting_System.Controllers
 
         private readonly ProductRepository _productRepository;
 
-        public ProductController(ApplicationDbContext dbContext, ProductRepository productRepository)
+        private readonly GeneralRepo _generalRepo;
+
+        public ProductController(ApplicationDbContext dbContext, ProductRepository productRepository,
+            GeneralRepo generalRepo)
         {
             _dbContext = dbContext;
             _productRepository = productRepository;
+            _generalRepo = generalRepo;
         }
 
         public async Task<IActionResult> Index(CancellationToken cancellationToken)

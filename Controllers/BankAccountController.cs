@@ -20,12 +20,15 @@ namespace Accounting_System.Controllers
 
         private readonly BankAccountRepo _bankAccountRepo;
 
+        private readonly GeneralRepo _generalRepo;
+
         public BankAccountController(ApplicationDbContext dbContext, UserManager<IdentityUser> userManager,
-            BankAccountRepo bankAccountRepo)
+            BankAccountRepo bankAccountRepo, GeneralRepo generalRepo)
         {
             _dbContext = dbContext;
-            this._userManager = userManager;
+            _userManager = userManager;
             _bankAccountRepo = bankAccountRepo;
+            _generalRepo = generalRepo;
         }
 
         public async Task<IActionResult> Index(CancellationToken cancellationToken)

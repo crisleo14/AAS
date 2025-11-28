@@ -28,12 +28,18 @@ namespace Accounting_System.Controllers
 
         private readonly InventoryRepo _inventoryRepo;
 
-        public PurchaseOrderController(ApplicationDbContext dbContext, PurchaseOrderRepo purchaseOrderRepo, UserManager<IdentityUser> userManager, InventoryRepo inventoryRepo)
+        private readonly GeneralRepo _generalRepo;
+
+        public PurchaseOrderController(ApplicationDbContext dbContext, PurchaseOrderRepo purchaseOrderRepo,
+            UserManager<IdentityUser> userManager,
+            InventoryRepo inventoryRepo,
+            GeneralRepo generalRepo)
         {
             _dbContext = dbContext;
             _purchaseOrderRepo = purchaseOrderRepo;
             _userManager = userManager;
             _inventoryRepo = inventoryRepo;
+            _generalRepo = generalRepo;
         }
 
         public IActionResult Index()
